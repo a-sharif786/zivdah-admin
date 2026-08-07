@@ -1,0 +1,34 @@
+import { apiClient } from '@/api/client';
+import type {
+  AuthUserResponseDTO,
+  LoginRequest,
+  LoginResponseDTO,
+  RegisterRequest,
+  UpdateRoleRequest,
+  UpdateUserProfileRequest,
+} from '@/types/auth';
+
+const BASE = '/restful/v1/api/auth';
+
+export const authApi = {
+  login: (payload: LoginRequest) => apiClient.post<LoginResponseDTO>(`${BASE}/login`, payload).then((r) => r.data),
+
+  register: (payload: RegisterRequest) => apiClient.post<void>(`${BASE}/register`, payload).then((r) => r.data),
+
+  getAllUsers: () => apiClient.get<AuthUserResponseDTO[]>(`${BASE}/all-users`).then((r) => r.data),
+
+  getUserById: (userId: number) =>
+    apiClient.get<LoginResponseDTO>(`${BASE}/byUserId/${userId}`).then((r) => r.data),
+
+  updateProfile: (userId: number, payload: UpdateUserProfileRequest) =>
+    apiClient.put(`${BASE}/update-profile/${userId}`, payload).then((r) => r.data),
+
+  updateRole: (userId: number, payload: UpdateRoleRequest) =>
+    apiClient.put(`${BASE}/update-role/${userId}`, payload).then((r) => r.data),
+
+  activateUser: (userId: number) => apiClient.put<void>(`${BASE}/activate/${userId}`).then((r) => r.data),
+
+  deactivateUser: (userId: number) => apiClient.put<void>(`${BASE}/deactivate/${userId}`).then((r) => r.data),
+
+  logout: () => apiClient.post<void>(`${BASE}/logout`).then((r) => r.data),
+};
