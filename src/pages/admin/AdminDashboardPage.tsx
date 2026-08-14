@@ -16,7 +16,7 @@ export function AdminDashboardPage() {
     queryKey: ['dashboard', 'orders'],
     queryFn: () => orderApi.getAll(0, 1),
   });
-  const coupons = useQuery({ queryKey: ['dashboard', 'coupons'], queryFn: couponApi.getAll });
+   const coupons = useQuery({ queryKey: ['dashboard', 'coupons'], queryFn: couponApi.getAll });
 
   return (
     <div>
@@ -49,7 +49,7 @@ export function AdminDashboardPage() {
           <Card>
             <Statistic title="Active Coupons" value={coupons.data?.filter((c) => c.active).length ?? 0} loading={coupons.isLoading} />
           </Card>
-        </Col>
+        </Col> 
       </Row>
       <Row gutter={16} style={{ marginTop: 16 }}>
         <Col span={6}>

@@ -34,8 +34,8 @@ export function LoginPage() {
         return;
       }
 
-      login(response);
-      navigate(response.role === 'ADMIN' ? '/admin' : '/vendor', { replace: true });
+       login(response);
+       navigate(response.role === 'ADMIN' ? '/admin' : '/vendor', { replace: true });
     } catch (err) {
       setError((err as ApiError).message);
     } finally {

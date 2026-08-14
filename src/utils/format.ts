@@ -1,6 +1,8 @@
-export function formatCurrency(value: number | null | undefined, currency = 'INR'): string {
+export function formatCurrency(value: number | null | undefined, currency?: string | null): string {
   if (value === null || value === undefined) return '-';
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(value);
+  // default param (`currency = 'INR'`) only covers `undefined` — the API sends explicit
+  // `null` for payments predating the currency column, so fall back with `??` instead.
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency ?? 'INR' }).format(value);
 }
 
 export function formatDateTime(value: string | null | undefined): string {

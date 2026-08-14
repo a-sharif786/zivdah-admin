@@ -15,7 +15,7 @@ export interface PaymentResponseDto {
   orderId: number;
   userId: number;
   amount: number;
-  currency?: string;
+  currency?: string | null;
   method: PaymentMethod;
   status: PaymentStatus;
   transactionId?: string;
