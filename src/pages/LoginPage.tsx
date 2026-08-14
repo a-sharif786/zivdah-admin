@@ -3,39 +3,86 @@ import { Button, Card, Form, Input, Typography, Alert, Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/authApi';
 import { useAuthStore } from '@/store/authStore';
+import { getDeviceToken } from '@/utils/deviceToken';
 import type { ApiError } from '@/types/common';
+import type { LoginResponseDTO } from '@/types/auth';
 
 const { Title, Text } = Typography;
 
-interface FormValues {
-  identifier: string;
+interface EmailFormValues {
+  email: string;
   password: string;
+}
+
+interface MobileFormValues {
+  mobile: string;
+}
+
+interface OtpFormValues {
+  otp: string;
 }
 
 export function LoginPage() {
   const [mode, setMode] = useState<'mobile' | 'email'>('mobile');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpMobile, setOtpMobile] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
 
-  const onFinish = async (values: FormValues) => {
+  const finishLogin = (response: LoginResponseDTO) => {
+    if (response.role !== 'ADMIN' && response.role !== 'VENDOR') {
+      setError('This account does not have Admin or Vendor access to Zivdah Admin.');
+      return;
+    }
+    login(response);
+    navigate(response.role === 'ADMIN' ? '/admin' : '/vendor', { replace: true });
+  };
+
+  const switchMode = (v: 'mobile' | 'email') => {
+    setMode(v);
+    setError(null);
+    setOtpSent(false);
+  };
+
+  const onEmailLogin = async (values: EmailFormValues) => {
     setError(null);
     setLoading(true);
     try {
-      const response = await authApi.login({
-        mobile: mode === 'mobile' ? values.identifier : undefined,
-        email: mode === 'email' ? values.identifier : undefined,
-        password: values.password,
+      const response = await authApi.login({ email: values.email, password: values.password });
+      finishLogin(response);
+    } catch (err) {
+      setError((err as ApiError).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSendOtp = async (values: MobileFormValues) => {
+    setError(null);
+    setLoading(true);
+    try {
+      await authApi.sendOtp(values.mobile);
+      setOtpMobile(values.mobile);
+      setOtpSent(true);
+    } catch (err) {
+      setError((err as ApiError).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onVerifyOtp = async (values: OtpFormValues) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await authApi.verifyOtp({
+        mobile: otpMobile,
+        otp: values.otp,
+        deviceToken: getDeviceToken(),
       });
-
-      if (response.role !== 'ADMIN' && response.role !== 'VENDOR') {
-        setError('This account does not have Admin or Vendor access to Zivdah Admin.');
-        return;
-      }
-
-       login(response);
-       navigate(response.role === 'ADMIN' ? '/admin' : '/vendor', { replace: true });
+      finishLogin(response);
     } catch (err) {
       setError((err as ApiError).message);
     } finally {
@@ -68,33 +115,76 @@ export function LoginPage() {
             { label: 'Email', value: 'email' },
           ]}
           value={mode}
-          onChange={(v) => setMode(v as 'mobile' | 'email')}
+          onChange={(v) => switchMode(v as 'mobile' | 'email')}
           style={{ marginBottom: 16 }}
         />
 
         {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
-        <Form layout="vertical" onFinish={onFinish} disabled={loading}>
-          <Form.Item
-            name="identifier"
-            label={mode === 'mobile' ? 'Mobile Number' : 'Email'}
-            rules={[{ required: true, message: 'This field is required' }]}
-          >
-            <Input placeholder={mode === 'mobile' ? '9876543210' : 'you@example.com'} />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[{ required: true, message: 'Password is required' }]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              Log In
+        {mode === 'email' ? (
+          <Form layout="vertical" onFinish={onEmailLogin} disabled={loading}>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: 'Email is required' },
+                { type: 'email', message: 'Enter a valid email' },
+              ]}
+            >
+              <Input placeholder="you@example.com" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[{ required: true, message: 'Password is required' }]}
+            >
+              <Input.Password />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" block loading={loading}>
+                Log In
+              </Button>
+            </Form.Item>
+          </Form>
+        ) : !otpSent ? (
+          <Form layout="vertical" onFinish={onSendOtp} disabled={loading}>
+            <Form.Item
+              name="mobile"
+              label="Mobile Number"
+              rules={[{ required: true, message: 'Mobile number is required' }]}
+            >
+              <Input placeholder="9876543210" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" block loading={loading}>
+                Send OTP
+              </Button>
+            </Form.Item>
+          </Form>
+        ) : (
+          <Form layout="vertical" onFinish={onVerifyOtp} disabled={loading}>
+            <Form.Item label={`OTP sent to ${otpMobile}`} name="otp" rules={[{ required: true, message: 'OTP is required' }]}>
+              <Input placeholder="123456" maxLength={6} />
+            </Form.Item>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+              Demo backend — OTP is always 123456.
+            </Text>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Button type="primary" htmlType="submit" block loading={loading}>
+                Verify &amp; Log In
+              </Button>
+            </Form.Item>
+            <Button
+              type="link"
+              block
+              disabled={loading}
+              onClick={() => setOtpSent(false)}
+              style={{ padding: 0 }}
+            >
+              Use a different number
             </Button>
-          </Form.Item>
-        </Form>
+          </Form>
+        )}
       </Card>
     </div>
   );

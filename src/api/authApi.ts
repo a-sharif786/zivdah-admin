@@ -6,12 +6,18 @@ import type {
   RegisterRequest,
   UpdateRoleRequest,
   UpdateUserProfileRequest,
+  VerifyOtpRequest,
 } from '@/types/auth';
 
 const BASE = '/restful/v1/api/auth';
 
 export const authApi = {
   login: (payload: LoginRequest) => apiClient.post<LoginResponseDTO>(`${BASE}/login`, payload).then((r) => r.data),
+
+  sendOtp: (mobile: string) => apiClient.post<void>(`${BASE}/send-otp`, { mobile }).then((r) => r.data),
+
+  verifyOtp: (payload: VerifyOtpRequest) =>
+    apiClient.post<LoginResponseDTO>(`${BASE}/verify-otp`, payload).then((r) => r.data),
 
   register: (payload: RegisterRequest) => apiClient.post<void>(`${BASE}/register`, payload).then((r) => r.data),
 

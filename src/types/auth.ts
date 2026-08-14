@@ -3,7 +3,14 @@ export type Role = 'USER' | 'ADMIN' | 'VENDOR';
 export interface LoginRequest {
   mobile?: string;
   email?: string;
-  password: string;
+  // Required for email login; mobile login uses OTP instead (see VerifyOtpRequest).
+  password?: string;
+}
+
+export interface VerifyOtpRequest {
+  mobile: string;
+  otp: string;
+  deviceToken: string;
 }
 
 export interface RegisterRequest {
