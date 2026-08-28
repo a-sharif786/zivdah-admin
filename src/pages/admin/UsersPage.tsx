@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { Table, Select, message, Popconfirm, Button, Space } from 'antd';
+import { TextField, MenuItem, Stack } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
 import { BooleanTag } from '@/components/common/StatusTag';
+import { DataTable } from '@/components/common/DataTable';
+import { ConfirmButton } from '@/components/common/ConfirmButton';
 import { authApi } from '@/api/authApi';
+import { notify } from '@/utils/notify';
 import type { AuthUserResponseDTO, Role } from '@/types/auth';
 import type { ApiError } from '@/types/common';
 
 const ROLES: Role[] = ['USER', 'ADMIN', 'VENDOR'];
 
 export function UsersPage() {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const queryClient = useQueryClient();
 
@@ -21,43 +24,48 @@ export function UsersPage() {
   const roleMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: Role }) => authApi.updateRole(userId, { role }),
     onSuccess: () => {
-      message.success('Role updated');
+      notify.success('Role updated');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const activateMutation = useMutation({
     mutationFn: (userId: number) => authApi.activateUser(userId),
     onSuccess: () => {
-      message.success('User activated');
+      notify.success('User activated');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const deactivateMutation = useMutation({
     mutationFn: (userId: number) => authApi.deactivateUser(userId),
     onSuccess: () => {
-      message.success('User deactivated');
+      notify.success('User deactivated');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
+
+  const rows = data ?? [];
+  const paged = rows.slice(page * pageSize, page * pageSize + pageSize);
 
   return (
     <div>
       <PageHeader title="Users" />
-      <Table<AuthUserResponseDTO>
+      <DataTable<AuthUserResponseDTO>
         rowKey="userId"
         loading={isLoading}
-        dataSource={data ?? []}
+        dataSource={paged}
         pagination={{
-          current: page,
+          page,
           pageSize,
-          onChange: (p, s) => {
-            setPage(p);
+          total: rows.length,
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setPageSize(s);
+            setPage(0);
           },
         }}
         columns={[
@@ -68,37 +76,46 @@ export function UsersPage() {
           {
             title: 'Role',
             dataIndex: 'role',
-            render: (role: Role, record) => (
-              <Select
+            render: (role, record) => (
+              <TextField
+                select
                 size="small"
-                value={role}
-                style={{ width: 110 }}
-                options={ROLES.map((r) => ({ label: r, value: r }))}
-                onChange={(newRole) => roleMutation.mutate({ userId: record.userId, role: newRole })}
-              />
+                value={role as Role}
+                sx={{ width: 120 }}
+                onChange={(e) => roleMutation.mutate({ userId: record.userId, role: e.target.value as Role })}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {ROLES.map((r) => (
+                  <MenuItem key={r} value={r}>
+                    {r}
+                  </MenuItem>
+                ))}
+              </TextField>
             ),
           },
           {
             title: 'Status',
             dataIndex: 'active',
-            render: (active: boolean) => <BooleanTag value={active} />,
+            render: (active) => <BooleanTag value={active as boolean} />,
           },
           {
             title: 'Actions',
             render: (_, record) => (
-              <Space>
+              <Stack direction="row" spacing={1}>
                 {record.active ? (
-                  <Popconfirm title="Deactivate this user?" onConfirm={() => deactivateMutation.mutate(record.userId)}>
-                    <Button size="small" danger>
-                      Deactivate
-                    </Button>
-                  </Popconfirm>
+                  <ConfirmButton
+                    title="Deactivate this user?"
+                    color="error"
+                    onConfirm={() => deactivateMutation.mutate(record.userId)}
+                  >
+                    Deactivate
+                  </ConfirmButton>
                 ) : (
-                  <Popconfirm title="Activate this user?" onConfirm={() => activateMutation.mutate(record.userId)}>
-                    <Button size="small">Activate</Button>
-                  </Popconfirm>
+                  <ConfirmButton title="Activate this user?" onConfirm={() => activateMutation.mutate(record.userId)}>
+                    Activate
+                  </ConfirmButton>
                 )}
-              </Space>
+              </Stack>
             ),
           },
         ]}

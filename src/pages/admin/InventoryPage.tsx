@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { Table, Button, Modal, Form, InputNumber, message, Space } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Button, Dialog, DialogTitle, DialogContent, TextField, Stack, Chip } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataTable } from '@/components/common/DataTable';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { inventoryApi } from '@/api/inventoryApi';
 import { formatDateTime } from '@/utils/format';
-import type { InventoryResponseDto, StockMutationRequest } from '@/types/inventory';
+import { notify } from '@/utils/notify';
+import type { InventoryResponseDto } from '@/types/inventory';
 import type { ApiError } from '@/types/common';
 
 export function InventoryPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [form] = Form.useForm();
+  const [productId, setProductId] = useState('');
+  const [quantity, setQuantity] = useState('');
   const queryClient = useQueryClient();
 
   const { items, total, isLoading } = usePagedQuery<InventoryResponseDto>(
@@ -26,14 +29,15 @@ export function InventoryPage() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-inventory'] });
 
   const addStockMutation = useMutation({
-    mutationFn: (payload: StockMutationRequest) => inventoryApi.addStock(payload),
+    mutationFn: () => inventoryApi.addStock({ productId: Number(productId), quantity: Number(quantity) }),
     onSuccess: () => {
-      message.success('Stock added');
+      notify.success('Stock added');
       setAddModalOpen(false);
-      form.resetFields();
+      setProductId('');
+      setQuantity('');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   return (
@@ -41,54 +45,76 @@ export function InventoryPage() {
       <PageHeader
         title="Inventory"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddModalOpen(true)}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddModalOpen(true)}>
             Add Stock
           </Button>
         }
       />
-      <Table<InventoryResponseDto>
+      <DataTable<InventoryResponseDto>
         rowKey="productId"
         loading={isLoading}
         dataSource={items}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
           { title: 'Product ID', dataIndex: 'productId' },
-          { title: 'Available', dataIndex: 'availableQuantity' },
+          {
+            title: 'Available',
+            dataIndex: 'availableQuantity',
+            render: (v) => (
+              <Chip
+                label={v as number}
+                size="small"
+                color={(v as number) <= 5 ? 'error' : (v as number) <= 20 ? 'warning' : 'success'}
+              />
+            ),
+          },
           { title: 'Reserved', dataIndex: 'reservedQuantity' },
-          { title: 'Last Updated', dataIndex: 'lastUpdated', render: formatDateTime },
+          { title: 'Last Updated', dataIndex: 'lastUpdated', render: (v) => formatDateTime(v as string) },
         ]}
       />
-      <Modal
-        title="Add Stock"
-        open={addModalOpen}
-        onCancel={() => setAddModalOpen(false)}
-        footer={null}
-        destroyOnHidden
-      >
-        <Form form={form} layout="vertical" onFinish={(v) => addStockMutation.mutate(v)}>
-          <Form.Item name="productId" label="Product ID" rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} min={1} />
-          </Form.Item>
-          <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
-            <InputNumber style={{ width: '100%' }} min={1} />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={addStockMutation.isPending}>
-                Add Stock
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+      <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Add Stock</DialogTitle>
+        <DialogContent>
+          <Stack
+            component="form"
+            spacing={2.25}
+            sx={{ pt: 1 }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (productId && quantity) addStockMutation.mutate();
+            }}
+          >
+            <TextField
+              label="Product ID"
+              type="number"
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Quantity"
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              fullWidth
+              required
+            />
+            <Button type="submit" variant="contained" loading={addStockMutation.isPending}>
+              Add Stock
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

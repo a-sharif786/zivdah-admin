@@ -1,7 +1,6 @@
-import { Upload, Image } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { useState, useEffect } from 'react';
-import type { UploadFile, UploadProps } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { Box, ButtonBase, Typography } from '@mui/material';
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
 
 export function ImageUploadField({
   existingImageUrl,
@@ -10,16 +9,15 @@ export function ImageUploadField({
   existingImageUrl?: string | null;
   onFileSelected: (file: File | null) => void;
 }) {
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [preview, setPreview] = useState<string | undefined>(existingImageUrl ?? undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setPreview(existingImageUrl ?? undefined);
   }, [existingImageUrl]);
 
-  const handleChange: UploadProps['onChange'] = ({ fileList: newList }) => {
-    setFileList(newList.slice(-1));
-    const file = newList[newList.length - 1]?.originFileObj as File | undefined;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       onFileSelected(file);
       setPreview(URL.createObjectURL(file));
@@ -27,24 +25,35 @@ export function ImageUploadField({
   };
 
   return (
-    <div>
-      <Upload
-        listType="picture-card"
-        fileList={fileList}
-        beforeUpload={() => false}
-        onChange={handleChange}
-        maxCount={1}
-        showUploadList={false}
+    <Box>
+      <input ref={inputRef} type="file" accept="image/*" hidden onChange={handleChange} />
+      <ButtonBase
+        onClick={() => inputRef.current?.click()}
+        sx={{
+          width: 96,
+          height: 96,
+          borderRadius: 2,
+          border: '1px dashed',
+          borderColor: 'divider',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 0.5,
+        }}
       >
         {preview ? (
-          <Image src={preview} alt="preview" width={90} height={90} style={{ objectFit: 'cover' }} preview={false} />
+          <Box component="img" src={preview} alt="preview" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Upload</div>
-          </div>
+          <>
+            <AddPhotoAlternateOutlinedIcon color="action" />
+            <Typography variant="caption" color="text.secondary">
+              Upload
+            </Typography>
+          </>
         )}
-      </Upload>
-    </div>
+      </ButtonBase>
+    </Box>
   );
 }

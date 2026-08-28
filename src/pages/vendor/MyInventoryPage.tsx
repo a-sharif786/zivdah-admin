@@ -1,6 +1,6 @@
-import { Table, Empty } from 'antd';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataTable } from '@/components/common/DataTable';
 import { useAuth } from '@/hooks/useAuth';
 import { productApi } from '@/api/productApi';
 import { inventoryApi } from '@/api/inventoryApi';
@@ -40,23 +40,19 @@ export function MyInventoryPage() {
   return (
     <div>
       <PageHeader title="My Inventory" />
-      {!loading && rows.length === 0 ? (
-        <Empty description="No inventory records found for your products yet" />
-      ) : (
-        <Table
-          rowKey="productId"
-          loading={loading}
-          dataSource={rows}
-          pagination={false}
-          columns={[
-            { title: 'Product', dataIndex: 'productName' },
-            { title: 'Product ID', dataIndex: 'productId' },
-            { title: 'Available', dataIndex: 'availableQuantity' },
-            { title: 'Reserved', dataIndex: 'reservedQuantity' },
-            { title: 'Last Updated', dataIndex: 'lastUpdated', render: formatDateTime },
-          ]}
-        />
-      )}
+      <DataTable
+        rowKey="productId"
+        loading={loading}
+        dataSource={rows}
+        emptyText="No inventory records found for your products yet"
+        columns={[
+          { title: 'Product', dataIndex: 'productName' },
+          { title: 'Product ID', dataIndex: 'productId' },
+          { title: 'Available', dataIndex: 'availableQuantity' },
+          { title: 'Reserved', dataIndex: 'reservedQuantity' },
+          { title: 'Last Updated', dataIndex: 'lastUpdated', render: (v) => formatDateTime(v as string) },
+        ]}
+      />
     </div>
   );
 }

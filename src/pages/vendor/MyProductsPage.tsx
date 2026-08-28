@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Table, Button, Modal, Image, Tag, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Button, Dialog, DialogTitle, DialogContent, Chip, Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ConfirmDeleteButton } from '@/components/common/ConfirmDeleteButton';
+import { ConfirmDeleteButton } from '@/components/common/ConfirmButton';
+import { DataTable } from '@/components/common/DataTable';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { useAuth } from '@/hooks/useAuth';
 import { productApi } from '@/api/productApi';
 import { formatCurrency } from '@/utils/format';
+import { notify } from '@/utils/notify';
 import type { ProductRequestDto, ProductResponseDto } from '@/types/product';
 import type { ApiError } from '@/types/common';
 
@@ -33,31 +35,31 @@ export function MyProductsPage() {
   const createMutation = useMutation({
     mutationFn: ({ dto, image }: { dto: ProductRequestDto; image: File }) => productApi.create(dto, image),
     onSuccess: () => {
-      message.success('Product created');
+      notify.success('Product created');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, dto, image }: { id: number; dto: ProductRequestDto; image: File | null }) =>
       productApi.update(id, dto, image),
     onSuccess: () => {
-      message.success('Product updated');
+      notify.success('Product updated');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => productApi.remove(id),
     onSuccess: () => {
-      message.success('Product deleted');
+      notify.success('Product deleted');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   return (
@@ -66,8 +68,8 @@ export function MyProductsPage() {
         title="My Products"
         extra={
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
+            variant="contained"
+            startIcon={<AddIcon />}
             onClick={() => {
               setEditing(null);
               setModalOpen(true);
@@ -77,17 +79,18 @@ export function MyProductsPage() {
           </Button>
         }
       />
-      <Table<ProductResponseDto>
+      <DataTable<ProductResponseDto>
         rowKey="id"
         loading={isLoading}
         dataSource={items}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
@@ -95,55 +98,55 @@ export function MyProductsPage() {
             title: 'Image',
             dataIndex: 'imageUrl',
             width: 70,
-            render: (url: string) => <Image src={url} width={48} height={48} style={{ objectFit: 'cover' }} />,
+            render: (url) => (
+              <Box component="img" src={url as string} sx={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 1 }} />
+            ),
           },
           { title: 'Name', dataIndex: 'name' },
           { title: 'Category', dataIndex: 'category' },
-          { title: 'Price', dataIndex: 'price', render: (v: number) => formatCurrency(v) },
+          { title: 'Price', dataIndex: 'price', render: (v) => formatCurrency(v as number) },
           { title: 'Stock', dataIndex: 'stockQuantity' },
           {
             title: 'In Stock',
             dataIndex: 'inStock',
-            render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? 'Yes' : 'No'}</Tag>,
+            render: (v) => <Chip label={v ? 'Yes' : 'No'} size="small" color={v ? 'success' : 'error'} />,
           },
           {
             title: 'Actions',
             render: (_, record) => (
-              <>
+              <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                   size="small"
-                  onClick={() => {
+                  variant="outlined"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditing(record);
                     setModalOpen(true);
                   }}
-                  style={{ marginRight: 8 }}
                 >
                   Edit
                 </Button>
                 <ConfirmDeleteButton onConfirm={() => deleteMutation.mutate(record.id)} loading={deleteMutation.isPending} />
-              </>
+              </Box>
             ),
           },
         ]}
       />
-      <Modal
-        title={editing ? 'Edit Product' : 'New Product'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        destroyOnHidden
-      >
-        <ProductForm
-          initial={editing}
-          onSubmit={(dto, image) =>
-            editing
-              ? updateMutation.mutate({ id: editing.id, dto, image })
-              : image && createMutation.mutate({ dto, image })
-          }
-          submitting={createMutation.isPending || updateMutation.isPending}
-          requireImage={!editing}
-        />
-      </Modal>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{editing ? 'Edit Product' : 'New Product'}</DialogTitle>
+        <DialogContent>
+          <ProductForm
+            initial={editing}
+            onSubmit={(dto, image) =>
+              editing
+                ? updateMutation.mutate({ id: editing.id, dto, image })
+                : image && createMutation.mutate({ dto, image })
+            }
+            submitting={createMutation.isPending || updateMutation.isPending}
+            requireImage={!editing}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

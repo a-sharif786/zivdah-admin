@@ -1,6 +1,9 @@
-import { Card, Col, Row, Statistic } from 'antd';
+import { Grid } from '@mui/material';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
+import { StatTile } from '@/components/common/StatTile';
 import { useAuth } from '@/hooks/useAuth';
 import { productApi } from '@/api/productApi';
 import { orderApi } from '@/api/orderApi';
@@ -20,19 +23,27 @@ export function VendorDashboardPage() {
 
   return (
     <div>
-      <PageHeader title={`Welcome, ${user?.name}`} />
-      <Row gutter={16}>
-        <Col span={8}>
-          <Card>
-            <Statistic title="My Products (page sample)" value={products.data?.length ?? 0} loading={products.isLoading} />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic title="My Orders (page sample)" value={orders.data?.length ?? 0} loading={orders.isLoading} />
-          </Card>
-        </Col>
-      </Row>
+      <PageHeader title={`Welcome, ${user?.name}`} subtitle="Here's a snapshot of your store" />
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <StatTile
+            title="My Products (page sample)"
+            icon={<Inventory2OutlinedIcon />}
+            color="#f59e0b"
+            value={products.data?.length ?? 0}
+            loading={products.isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <StatTile
+            title="My Orders (page sample)"
+            icon={<ShoppingCartOutlinedIcon />}
+            color="#06b6d4"
+            value={orders.data?.length ?? 0}
+            loading={orders.isLoading}
+          />
+        </Grid>
+      </Grid>
     </div>
   );
 }

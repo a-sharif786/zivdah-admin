@@ -1,15 +1,41 @@
-import { Typography, Space } from 'antd';
+import { Box, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
-const { Title } = Typography;
-
-export function PageHeader({ title, extra }: { title: string; extra?: ReactNode }) {
+export function PageHeader({
+  title,
+  subtitle,
+  extra,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  extra?: ReactNode;
+}) {
   return (
-    <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 16 }}>
-      <Title level={3} style={{ margin: 0 }}>
-        {title}
-      </Title>
-      <Space>{extra}</Space>
-    </Space>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 1.5,
+        mb: 2.5,
+      }}
+    >
+      <div>
+        <Typography variant="h5" sx={{ fontWeight: 700, m: 0 }}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: 13.5 }}>
+            {subtitle}
+          </Typography>
+        )}
+      </div>
+      {extra && (
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+          {extra}
+        </Stack>
+      )}
+    </Box>
   );
 }

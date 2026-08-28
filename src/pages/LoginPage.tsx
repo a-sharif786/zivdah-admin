@@ -1,31 +1,31 @@
 import { useState } from 'react';
-import { Button, Card, Form, Input, Typography, Alert, Segmented } from 'antd';
+import type { FormEvent } from 'react';
+import { Box, Card, Typography, Alert, ToggleButtonGroup, ToggleButton, TextField, Button, Stack } from '@mui/material';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
+import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/authApi';
 import { useAuthStore } from '@/store/authStore';
 import { getDeviceToken } from '@/utils/deviceToken';
+import { BRAND } from '@/theme/theme';
 import type { ApiError } from '@/types/common';
 import type { LoginResponseDTO } from '@/types/auth';
 
-const { Title, Text } = Typography;
-
-interface EmailFormValues {
-  email: string;
-  password: string;
-}
-
-interface MobileFormValues {
-  mobile: string;
-}
-
-interface OtpFormValues {
-  otp: string;
-}
+const FEATURES = [
+  { icon: <StorefrontOutlinedIcon fontSize="small" />, text: 'Catalog, inventory & vendor management' },
+  { icon: <BoltOutlinedIcon fontSize="small" />, text: 'Real-time orders, payments & delivery status' },
+  { icon: <VerifiedUserOutlinedIcon fontSize="small" />, text: 'Role-based access for admins and vendors' },
+];
 
 export function LoginPage() {
   const [mode, setMode] = useState<'mobile' | 'email'>('mobile');
   const [otpSent, setOtpSent] = useState(false);
   const [otpMobile, setOtpMobile] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const login = useAuthStore((s) => s.login);
@@ -33,7 +33,7 @@ export function LoginPage() {
 
   const finishLogin = (response: LoginResponseDTO) => {
     if (response.role !== 'ADMIN' && response.role !== 'VENDOR') {
-      setError('This account does not have Admin or Vendor access to Zivdah Admin.');
+      setError('Only Admin and Vendor accounts are allowed to access the Zivdah Admin Panel..');
       return;
     }
     login(response);
@@ -46,11 +46,12 @@ export function LoginPage() {
     setOtpSent(false);
   };
 
-  const onEmailLogin = async (values: EmailFormValues) => {
+  const onEmailLogin = async (e: FormEvent) => {
+    e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const response = await authApi.login({ email: values.email, password: values.password });
+      const response = await authApi.login({ email, password });
       finishLogin(response);
     } catch (err) {
       setError((err as ApiError).message);
@@ -59,12 +60,13 @@ export function LoginPage() {
     }
   };
 
-  const onSendOtp = async (values: MobileFormValues) => {
+  const onSendOtp = async (e: FormEvent) => {
+    e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      await authApi.sendOtp(values.mobile);
-      setOtpMobile(values.mobile);
+      await authApi.sendOtp(mobile);
+      setOtpMobile(mobile);
       setOtpSent(true);
     } catch (err) {
       setError((err as ApiError).message);
@@ -73,15 +75,12 @@ export function LoginPage() {
     }
   };
 
-  const onVerifyOtp = async (values: OtpFormValues) => {
+  const onVerifyOtp = async (e: FormEvent) => {
+    e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const response = await authApi.verifyOtp({
-        mobile: otpMobile,
-        otp: values.otp,
-        deviceToken: getDeviceToken(),
-      });
+      const response = await authApi.verifyOtp({ mobile: otpMobile, otp, deviceToken: getDeviceToken() });
       finishLogin(response);
     } catch (err) {
       setError((err as ApiError).message);
@@ -91,101 +90,166 @@ export function LoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#f0f2f5',
-      }}
-    >
-      <Card style={{ width: 380 }}>
-        <Title level={3} style={{ textAlign: 'center', marginBottom: 4 }}>
-          Zivdah Admin
-        </Title>
-        <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>
-          Admin &amp; Vendor Portal
-        </Text>
+    <Box sx={{ minHeight: '100vh', display: 'flex', backgroundColor: 'var(--app-bg)' }}>
+      <Box
+        className="login-brand-panel"
+        sx={{
+          flex: '0 0 42%',
+          maxWidth: 480,
+          background: BRAND.gradient,
+          color: '#fff',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          p: 7,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
+              background: 'rgba(255,255,255,0.16)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 18,
+            }}
+          >
+            Z
+          </Box>
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
+            Zivdah
+          </Typography>
+        </Box>
 
-        <Segmented
-          block
-          options={[
-            { label: 'Mobile', value: 'mobile' },
-            { label: 'Email', value: 'email' },
-          ]}
-          value={mode}
-          onChange={(v) => switchMode(v as 'mobile' | 'email')}
-          style={{ marginBottom: 16 }}
-        />
+        <div>
+          <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, mb: 1.5 }}>
+            Run your store, from one place.
+          </Typography>
+          <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: 15 }}>
+            Manage products, orders, payments and vendors across the Zivdah grocery platform.
+          </Typography>
 
-        {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
+          <Stack spacing={2} sx={{ mt: 4 }}>
+            {FEATURES.map((f) => (
+              <Box key={f.text} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.14)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: '0 0 auto',
+                  }}
+                >
+                  {f.icon}
+                </Box>
+                <Typography sx={{ color: 'rgba(255,255,255,0.85)' }}>{f.text}</Typography>
+              </Box>
+            ))}
+          </Stack>
+        </div>
 
-        {mode === 'email' ? (
-          <Form layout="vertical" onFinish={onEmailLogin} disabled={loading}>
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[
-                { required: true, message: 'Email is required' },
-                { type: 'email', message: 'Enter a valid email' },
-              ]}
-            >
-              <Input placeholder="you@example.com" />
-            </Form.Item>
-            <Form.Item
-              name="password"
-              label="Password"
-              rules={[{ required: true, message: 'Password is required' }]}
-            >
-              <Input.Password />
-            </Form.Item>
-            <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" block loading={loading}>
+        <Typography sx={{ color: 'rgba(255,255,255,0.45)', fontSize: 12.5 }}>
+          &copy; {new Date().getFullYear()} Zivdah. All rights reserved.
+        </Typography>
+      </Box>
+
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+        <Card sx={{ width: 380, p: 4, boxShadow: '0 8px 30px rgba(15, 23, 42, 0.08)' }}>
+          <Typography variant="h6" sx={{ textAlign: 'center', fontWeight: 700, mb: 0.5 }}>
+            Welcome back
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 3 }}>
+            Sign in to the Admin &amp; Vendor Portal
+          </Typography>
+
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={(_, v) => v && switchMode(v)}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="mobile">Mobile</ToggleButton>
+            <ToggleButton value="email">Email</ToggleButton>
+          </ToggleButtonGroup>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {mode === 'email' ? (
+            <Stack component="form" spacing={2} onSubmit={onEmailLogin}>
+              <TextField
+                label="Email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                fullWidth
+                required
+              />
+              <Button type="submit" variant="contained" size="large" loading={loading} fullWidth>
                 Log In
               </Button>
-            </Form.Item>
-          </Form>
-        ) : !otpSent ? (
-          <Form layout="vertical" onFinish={onSendOtp} disabled={loading}>
-            <Form.Item
-              name="mobile"
-              label="Mobile Number"
-              rules={[{ required: true, message: 'Mobile number is required' }]}
-            >
-              <Input placeholder="9876543210" />
-            </Form.Item>
-            <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" block loading={loading}>
+            </Stack>
+          ) : !otpSent ? (
+            <Stack component="form" spacing={2} onSubmit={onSendOtp}>
+              <TextField
+                label="Mobile Number"
+                placeholder="9876543210"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                disabled={loading}
+                fullWidth
+                required
+              />
+              <Button type="submit" variant="contained" size="large" loading={loading} fullWidth>
                 Send OTP
               </Button>
-            </Form.Item>
-          </Form>
-        ) : (
-          <Form layout="vertical" onFinish={onVerifyOtp} disabled={loading}>
-            <Form.Item label={`OTP sent to ${otpMobile}`} name="otp" rules={[{ required: true, message: 'OTP is required' }]}>
-              <Input placeholder="123456" maxLength={6} />
-            </Form.Item>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Demo backend — OTP is always 123456.
-            </Text>
-            <Form.Item style={{ marginBottom: 8 }}>
-              <Button type="primary" htmlType="submit" block loading={loading}>
+            </Stack>
+          ) : (
+            <Stack component="form" spacing={1.5} onSubmit={onVerifyOtp}>
+              <TextField
+                label={`OTP sent to ${otpMobile}`}
+                placeholder="123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                disabled={loading}
+                slotProps={{ htmlInput: { maxLength: 6 } }}
+                fullWidth
+                required
+              />
+              <Typography variant="body2" color="text.secondary">
+                Demo backend — OTP is always 123456.
+              </Typography>
+              <Button type="submit" variant="contained" size="large" loading={loading} fullWidth sx={{ mt: 1 }}>
                 Verify &amp; Log In
               </Button>
-            </Form.Item>
-            <Button
-              type="link"
-              block
-              disabled={loading}
-              onClick={() => setOtpSent(false)}
-              style={{ padding: 0 }}
-            >
-              Use a different number
-            </Button>
-          </Form>
-        )}
-      </Card>
-    </div>
+              <Button variant="text" disabled={loading} onClick={() => setOtpSent(false)} fullWidth>
+                Use a different number
+              </Button>
+            </Stack>
+          )}
+        </Card>
+      </Box>
+    </Box>
   );
 }

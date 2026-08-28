@@ -1,39 +1,62 @@
-import { Tag } from 'antd';
+import { Chip } from '@mui/material';
 
+// Hex colors (rather than antd's named palette) since MUI Chip takes a sx color, not a token name.
 const COLOR_MAP: Record<string, string> = {
   // Order statuses
-  CREATED: 'default',
-  PAYMENT_PENDING: 'orange',
-  PAID: 'cyan',
-  CONFIRMED: 'blue',
-  PACKING: 'geekblue',
-  READY_FOR_DELIVERY: 'purple',
-  OUT_FOR_DELIVERY: 'gold',
-  DELIVERED: 'green',
-  CANCELLED: 'red',
-  REFUNDED: 'volcano',
+  CREATED: '#94a3b8',
+  PAYMENT_PENDING: '#f59e0b',
+  PAID: '#06b6d4',
+  CONFIRMED: '#3b82f6',
+  PACKING: '#6366f1',
+  READY_FOR_DELIVERY: '#a855f7',
+  OUT_FOR_DELIVERY: '#eab308',
+  DELIVERED: '#22c55e',
+  CANCELLED: '#ef4444',
+  REFUNDED: '#f97316',
   // Payment statuses
-  PENDING: 'orange',
-  PROCESSING: 'blue',
-  SUCCESS: 'green',
-  FAILED: 'red',
+  PENDING: '#f59e0b',
+  PROCESSING: '#3b82f6',
+  SUCCESS: '#22c55e',
+  FAILED: '#ef4444',
   // Notification statuses
-  SENT: 'green',
+  SENT: '#22c55e',
   // Roles
-  ADMIN: 'gold',
-  VENDOR: 'blue',
-  USER: 'default',
+  ADMIN: '#eab308',
+  VENDOR: '#3b82f6',
+  USER: '#94a3b8',
 };
 
 export function StatusTag({ value }: { value: string | null | undefined }) {
-  if (!value) return <Tag>-</Tag>;
-  return <Tag color={COLOR_MAP[value] ?? 'default'}>{value}</Tag>;
+  if (!value) return <Chip label="-" size="small" />;
+  const color = COLOR_MAP[value] ?? '#94a3b8';
+  return (
+    <Chip
+      label={value}
+      size="small"
+      sx={{
+        color,
+        backgroundColor: `${color}1f`,
+        border: `1px solid ${color}40`,
+      }}
+    />
+  );
 }
 
-export function BooleanTag({ value, trueLabel = 'Active', falseLabel = 'Inactive' }: {
+export function BooleanTag({
+  value,
+  trueLabel = 'Active',
+  falseLabel = 'Inactive',
+}: {
   value: boolean | null | undefined;
   trueLabel?: string;
   falseLabel?: string;
 }) {
-  return <Tag color={value ? 'green' : 'default'}>{value ? trueLabel : falseLabel}</Tag>;
+  return (
+    <Chip
+      label={value ? trueLabel : falseLabel}
+      size="small"
+      color={value ? 'success' : 'default'}
+      variant={value ? 'filled' : 'outlined'}
+    />
+  );
 }

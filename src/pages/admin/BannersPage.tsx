@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Table, Button, Modal, Image, Switch, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Button, Dialog, DialogTitle, DialogContent, Switch, Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ConfirmDeleteButton } from '@/components/common/ConfirmDeleteButton';
+import { ConfirmDeleteButton } from '@/components/common/ConfirmButton';
+import { DataTable } from '@/components/common/DataTable';
 import { BannerForm } from '@/components/forms/BannerForm';
 import { bannerApi } from '@/api/productApi';
+import { notify } from '@/utils/notify';
 import type { BannerRequestDto, BannerResponseDto } from '@/types/product';
 import type { ApiError } from '@/types/common';
 
@@ -21,37 +23,37 @@ export function BannersPage() {
   const createMutation = useMutation({
     mutationFn: ({ dto, image }: { dto: BannerRequestDto; image: File }) => bannerApi.create(dto, image),
     onSuccess: () => {
-      message.success('Banner created');
+      notify.success('Banner created');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, dto, image }: { id: number; dto: BannerRequestDto; image: File | null }) =>
       bannerApi.update(id, dto, image),
     onSuccess: () => {
-      message.success('Banner updated');
+      notify.success('Banner updated');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => bannerApi.remove(id),
     onSuccess: () => {
-      message.success('Banner deleted');
+      notify.success('Banner deleted');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: number) => bannerApi.toggle(id),
     onSuccess: invalidate,
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   return (
@@ -60,8 +62,8 @@ export function BannersPage() {
         title="Banners"
         extra={
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
+            variant="contained"
+            startIcon={<AddIcon />}
             onClick={() => {
               setEditing(null);
               setModalOpen(true);
@@ -71,62 +73,65 @@ export function BannersPage() {
           </Button>
         }
       />
-      <Table<BannerResponseDto>
+      <DataTable<BannerResponseDto>
         rowKey="id"
         loading={isLoading}
         dataSource={data ?? []}
-        pagination={false}
         columns={[
           {
             title: 'Image',
             dataIndex: 'imageUrl',
-            render: (url: string) => <Image src={url} width={120} height={48} style={{ objectFit: 'cover' }} />,
+            render: (url) => (
+              <Box component="img" src={url as string} sx={{ width: 120, height: 48, objectFit: 'cover', borderRadius: 1 }} />
+            ),
           },
           { title: 'Title', dataIndex: 'title' },
           {
             title: 'Active',
             dataIndex: 'active',
-            render: (active: boolean, record) => (
-              <Switch checked={active} onChange={() => toggleMutation.mutate(record.id)} />
+            render: (active, record) => (
+              <Switch
+                checked={active as boolean}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggleMutation.mutate(record.id)}
+              />
             ),
           },
           {
             title: 'Actions',
             render: (_, record) => (
-              <>
+              <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                   size="small"
-                  onClick={() => {
+                  variant="outlined"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditing(record);
                     setModalOpen(true);
                   }}
-                  style={{ marginRight: 8 }}
                 >
                   Edit
                 </Button>
                 <ConfirmDeleteButton onConfirm={() => deleteMutation.mutate(record.id)} loading={deleteMutation.isPending} />
-              </>
+              </Box>
             ),
           },
         ]}
       />
-      <Modal
-        title={editing ? 'Edit Banner' : 'New Banner'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        destroyOnHidden
-      >
-        <BannerForm
-          initial={editing}
-          onSubmit={(dto, image) =>
-            editing
-              ? updateMutation.mutate({ id: editing.id, dto, image })
-              : image && createMutation.mutate({ dto, image })
-          }
-          submitting={createMutation.isPending || updateMutation.isPending}
-        />
-      </Modal>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{editing ? 'Edit Banner' : 'New Banner'}</DialogTitle>
+        <DialogContent>
+          <BannerForm
+            initial={editing}
+            onSubmit={(dto, image) =>
+              editing
+                ? updateMutation.mutate({ id: editing.id, dto, image })
+                : image && createMutation.mutate({ dto, image })
+            }
+            submitting={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

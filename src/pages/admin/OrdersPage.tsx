@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Table, Select, Space } from 'antd';
+import { TextField, MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
+import { DataTable } from '@/components/common/DataTable';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { orderApi } from '@/api/orderApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
@@ -24,12 +25,12 @@ const STATUSES: OrderStatus[] = [
 export function OrdersPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
-  const [status, setStatus] = useState<OrderStatus | undefined>(undefined);
+  const [status, setStatus] = useState<OrderStatus | ''>('');
   const navigate = useNavigate();
 
   const { items, total, isLoading } = usePagedQuery<OrderResponseDto>(
-    ['admin-orders', status ?? 'ALL'],
-    (p, s) => orderApi.getAll(p, s, status),
+    ['admin-orders', status || 'ALL'],
+    (p, s) => orderApi.getAll(p, s, status || undefined),
     page,
     size
   );
@@ -39,43 +40,48 @@ export function OrdersPage() {
       <PageHeader
         title="Orders"
         extra={
-          <Space>
-            <Select
-              allowClear
-              placeholder="Filter by status"
-              style={{ width: 200 }}
-              options={STATUSES.map((s) => ({ label: s, value: s }))}
-              value={status}
-              onChange={(v) => {
-                setStatus(v);
-                setPage(0);
-              }}
-            />
-          </Space>
+          <TextField
+            select
+            size="small"
+            label="Filter by status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as OrderStatus | '');
+              setPage(0);
+            }}
+            sx={{ width: 200 }}
+          >
+            <MenuItem value="">All</MenuItem>
+            {STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
+          </TextField>
         }
       />
-      <Table<OrderResponseDto>
+      <DataTable<OrderResponseDto>
         rowKey="orderId"
         loading={isLoading}
         dataSource={items}
-        onRow={(record) => ({ onClick: () => navigate(`/admin/orders/${record.orderId}`) })}
-        rowClassName={() => 'clickable-row'}
+        onRowClick={(record) => navigate(`/admin/orders/${record.orderId}`)}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
           { title: 'Order #', dataIndex: 'orderNumber' },
           { title: 'User', dataIndex: 'userId' },
-          { title: 'Total', dataIndex: 'totalAmount', render: (v: number, r) => formatCurrency(v, r.currency) },
-          { title: 'Status', dataIndex: 'status', render: (v: string) => <StatusTag value={v} /> },
+          { title: 'Total', dataIndex: 'totalAmount', render: (v, r) => formatCurrency(v as number, r.currency) },
+          { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
           { title: 'Items', render: (_, r) => r.items?.length ?? 0 },
-          { title: 'Created', dataIndex: 'createdAt', render: formatDateTime },
+          { title: 'Created', dataIndex: 'createdAt', render: (v) => formatDateTime(v as string) },
         ]}
       />
     </div>

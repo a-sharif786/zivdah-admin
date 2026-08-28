@@ -1,5 +1,6 @@
-import { Form, Input, Switch, Button } from 'antd';
 import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { TextField, Switch, FormControlLabel, Button, Stack, Typography } from '@mui/material';
 import { ImageUploadField } from '@/components/common/ImageUploadField';
 import type { BannerRequestDto, BannerResponseDto } from '@/types/product';
 
@@ -12,39 +13,53 @@ export function BannerForm({
   onSubmit: (dto: BannerRequestDto, image: File | null) => void;
   submitting?: boolean;
 }) {
-  const [form] = Form.useForm();
+  const [title, setTitle] = useState('');
+  const [active, setActive] = useState(true);
   const [image, setImage] = useState<File | null>(null);
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (initial) {
-      form.setFieldsValue(initial);
+      setTitle(initial.title ?? '');
+      setActive(initial.active);
     } else {
-      form.resetFields();
+      setTitle('');
+      setActive(true);
     }
     setImage(null);
-  }, [initial, form]);
+    setTouched(false);
+  }, [initial]);
+
+  const missingImage = !initial && !image;
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setTouched(true);
+    if (missingImage) return;
+    onSubmit({ title, active }, image);
+  };
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={(values) => onSubmit({ title: values.title, active: values.active ?? true }, image)}
-    >
-      <Form.Item label="Image">
+    <Stack component="form" onSubmit={handleSubmit} spacing={2.25} sx={{ pt: 1 }}>
+      <div>
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          Image
+        </Typography>
         <ImageUploadField existingImageUrl={initial?.imageUrl} onFileSelected={setImage} />
-        {!initial && !image && <div style={{ color: '#ff4d4f', fontSize: 12 }}>Image is required</div>}
-      </Form.Item>
-      <Form.Item name="title" label="Title">
-        <Input />
-      </Form.Item>
-      <Form.Item name="active" label="Active" valuePropName="checked" initialValue={true}>
-        <Switch />
-      </Form.Item>
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={submitting} block>
-          {initial ? 'Update Banner' : 'Create Banner'}
-        </Button>
-      </Form.Item>
-    </Form>
+        {touched && missingImage && (
+          <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+            Image is required
+          </Typography>
+        )}
+      </div>
+      <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth />
+      <FormControlLabel
+        control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />}
+        label="Active"
+      />
+      <Button type="submit" variant="contained" size="large" loading={submitting}>
+        {initial ? 'Update Banner' : 'Create Banner'}
+      </Button>
+    </Stack>
   );
 }

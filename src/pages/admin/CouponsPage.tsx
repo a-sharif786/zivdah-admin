@@ -1,16 +1,28 @@
 import { useState } from 'react';
-import { Table, Button, Modal, Switch, message, Card, InputNumber, Space, Typography } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Switch,
+  Card,
+  CardContent,
+  CardHeader,
+  TextField,
+  Stack,
+  Typography,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ConfirmDeleteButton } from '@/components/common/ConfirmDeleteButton';
+import { ConfirmDeleteButton } from '@/components/common/ConfirmButton';
+import { DataTable } from '@/components/common/DataTable';
 import { CouponForm } from '@/components/forms/CouponForm';
 import { couponApi } from '@/api/couponApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
+import { notify } from '@/utils/notify';
 import type { ApplyCouponResponseDto, CouponRequestDto, CouponResponseDto } from '@/types/coupon';
 import type { ApiError } from '@/types/common';
-
-const { Text } = Typography;
 
 export function CouponsPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -26,32 +38,32 @@ export function CouponsPage() {
   const createMutation = useMutation({
     mutationFn: (dto: CouponRequestDto) => couponApi.create(dto),
     onSuccess: () => {
-      message.success('Coupon created');
+      notify.success('Coupon created');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: number) => couponApi.toggle(id),
     onSuccess: invalidate,
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => couponApi.remove(id),
     onSuccess: () => {
-      message.success('Coupon deleted');
+      notify.success('Coupon deleted');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const applyPreviewMutation = useMutation({
     mutationFn: () => couponApi.apply({ code: previewCode, orderAmount: previewAmount }),
     onSuccess: setPreviewResult,
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   return (
@@ -59,32 +71,35 @@ export function CouponsPage() {
       <PageHeader
         title="Coupons"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
             New Coupon
           </Button>
         }
       />
-      <Table<CouponResponseDto>
+      <DataTable<CouponResponseDto>
         rowKey="id"
         loading={isLoading}
         dataSource={data ?? []}
-        pagination={false}
         columns={[
           { title: 'Code', dataIndex: 'code' },
           { title: 'Type', dataIndex: 'discountType' },
           {
             title: 'Value',
             dataIndex: 'discountValue',
-            render: (v: number, r) => (r.discountType === 'PERCENTAGE' ? `${v}%` : formatCurrency(v)),
+            render: (v, r) => (r.discountType === 'PERCENTAGE' ? `${v}%` : formatCurrency(v as number)),
           },
           { title: 'Used / Limit', render: (_, r) => `${r.usedCount} / ${r.usageLimit}` },
-          { title: 'Valid From', dataIndex: 'validFrom', render: formatDateTime },
-          { title: 'Valid Until', dataIndex: 'validUntil', render: formatDateTime },
+          { title: 'Valid From', dataIndex: 'validFrom', render: (v) => formatDateTime(v as string) },
+          { title: 'Valid Until', dataIndex: 'validUntil', render: (v) => formatDateTime(v as string) },
           {
             title: 'Active',
             dataIndex: 'active',
-            render: (active: boolean, record) => (
-              <Switch checked={active} onChange={() => toggleMutation.mutate(record.id)} />
+            render: (active, record) => (
+              <Switch
+                checked={active as boolean}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggleMutation.mutate(record.id)}
+              />
             ),
           },
           {
@@ -96,44 +111,50 @@ export function CouponsPage() {
         ]}
       />
 
-      <Card title="Apply Coupon Preview" style={{ marginTop: 24, maxWidth: 480 }}>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Space.Compact style={{ width: '100%' }}>
-            <input
-              placeholder="Coupon code"
+      <Card sx={{ mt: 3, maxWidth: 480 }}>
+        <CardHeader title="Apply Coupon Preview" titleTypographyProps={{ variant: 'subtitle1', fontWeight: 700 }} />
+        <CardContent>
+          <Stack spacing={2}>
+            <TextField
+              label="Coupon code"
               value={previewCode}
               onChange={(e) => setPreviewCode(e.target.value.toUpperCase())}
-              style={{ flex: 1, padding: '4px 11px', border: '1px solid #d9d9d9', borderRadius: 6 }}
+              fullWidth
             />
-          </Space.Compact>
-          <InputNumber
-            addonBefore="Order Amount"
-            value={previewAmount}
-            onChange={(v) => setPreviewAmount(v ?? 0)}
-            style={{ width: '100%' }}
-          />
-          <Button
-            onClick={() => applyPreviewMutation.mutate()}
-            loading={applyPreviewMutation.isPending}
-            disabled={!previewCode}
-          >
-            Preview Discount
-          </Button>
-          {previewResult && (
-            <div>
-              <Text>Original: {formatCurrency(previewResult.originalAmount)}</Text>
-              <br />
-              <Text>Discount: {formatCurrency(previewResult.discountAmount)}</Text>
-              <br />
-              <Text strong>Final: {formatCurrency(previewResult.finalAmount)}</Text>
-            </div>
-          )}
-        </Space>
+            <TextField
+              label="Order Amount"
+              type="number"
+              value={previewAmount}
+              onChange={(e) => setPreviewAmount(Number(e.target.value) || 0)}
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              onClick={() => applyPreviewMutation.mutate()}
+              loading={applyPreviewMutation.isPending}
+              disabled={!previewCode}
+            >
+              Preview Discount
+            </Button>
+            {previewResult && (
+              <div>
+                <Typography variant="body2">Original: {formatCurrency(previewResult.originalAmount)}</Typography>
+                <Typography variant="body2">Discount: {formatCurrency(previewResult.discountAmount)}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  Final: {formatCurrency(previewResult.finalAmount)}
+                </Typography>
+              </div>
+            )}
+          </Stack>
+        </CardContent>
       </Card>
 
-      <Modal title="New Coupon" open={modalOpen} onCancel={() => setModalOpen(false)} footer={null} destroyOnHidden>
-        <CouponForm onSubmit={(dto) => createMutation.mutate(dto)} submitting={createMutation.isPending} />
-      </Modal>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>New Coupon</DialogTitle>
+        <DialogContent>
+          <CouponForm onSubmit={(dto) => createMutation.mutate(dto)} submitting={createMutation.isPending} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

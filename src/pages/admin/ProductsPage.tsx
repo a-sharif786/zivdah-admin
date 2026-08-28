@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Table, Button, Modal, Input, Image, message, Tag } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Dialog, DialogTitle, DialogContent, TextField, InputAdornment, Chip, Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ConfirmDeleteButton } from '@/components/common/ConfirmDeleteButton';
+import { ConfirmDeleteButton } from '@/components/common/ConfirmButton';
+import { DataTable } from '@/components/common/DataTable';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { productApi } from '@/api/productApi';
 import { formatCurrency } from '@/utils/format';
+import { notify } from '@/utils/notify';
 import type { ProductRequestDto, ProductResponseDto } from '@/types/product';
 import type { ApiError } from '@/types/common';
 
 export function ProductsPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
+  const [search, setSearch] = useState('');
   const [keyword, setKeyword] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProductResponseDto | null>(null);
@@ -31,31 +35,31 @@ export function ProductsPage() {
   const createMutation = useMutation({
     mutationFn: ({ dto, image }: { dto: ProductRequestDto; image: File }) => productApi.create(dto, image),
     onSuccess: () => {
-      message.success('Product created');
+      notify.success('Product created');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, dto, image }: { id: number; dto: ProductRequestDto; image: File | null }) =>
       productApi.update(id, dto, image),
     onSuccess: () => {
-      message.success('Product updated');
+      notify.success('Product updated');
       setModalOpen(false);
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => productApi.remove(id),
     onSuccess: () => {
-      message.success('Product deleted');
+      notify.success('Product deleted');
       invalidate();
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   const handleSubmit = (dto: ProductRequestDto, image: File | null) => {
@@ -72,19 +76,23 @@ export function ProductsPage() {
         title="Products"
         extra={
           <>
-            <Input.Search
+            <TextField
               placeholder="Search products..."
-              allowClear
-              prefix={<SearchOutlined />}
-              onSearch={(v) => {
-                setKeyword(v);
-                setPage(0);
+              size="small"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setKeyword(search);
+                  setPage(0);
+                }
               }}
-              style={{ width: 240 }}
+              slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+              sx={{ width: 240 }}
             />
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
+              variant="contained"
+              startIcon={<AddIcon />}
               onClick={() => {
                 setEditing(null);
                 setModalOpen(true);
@@ -95,18 +103,18 @@ export function ProductsPage() {
           </>
         }
       />
-      <Table<ProductResponseDto>
+      <DataTable<ProductResponseDto>
         rowKey="id"
         loading={isLoading}
         dataSource={items}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          showSizeChanger: true,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
@@ -114,56 +122,56 @@ export function ProductsPage() {
             title: 'Image',
             dataIndex: 'imageUrl',
             width: 70,
-            render: (url: string) => <Image src={url} width={48} height={48} style={{ objectFit: 'cover' }} />,
+            render: (url) => (
+              <Box component="img" src={url as string} sx={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 1 }} />
+            ),
           },
           { title: 'Name', dataIndex: 'name' },
           { title: 'Category', dataIndex: 'category' },
-          { title: 'Price', dataIndex: 'price', render: (v: number) => formatCurrency(v) },
+          { title: 'Price', dataIndex: 'price', render: (v) => formatCurrency(v as number) },
           { title: 'Stock', dataIndex: 'stockQuantity' },
           {
             title: 'In Stock',
             dataIndex: 'inStock',
-            render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? 'Yes' : 'No'}</Tag>,
+            render: (v) => <Chip label={v ? 'Yes' : 'No'} size="small" color={v ? 'success' : 'error'} />,
           },
           {
             title: 'Vendor',
             dataIndex: 'vendorId',
-            render: (v: number | null) => (v ? <Tag color="blue">#{v}</Tag> : <Tag>Platform</Tag>),
+            render: (v) => (v ? <Chip label={`#${v}`} size="small" color="info" /> : <Chip label="Platform" size="small" />),
           },
           {
             title: 'Actions',
             render: (_, record) => (
-              <>
+              <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                   size="small"
-                  onClick={() => {
+                  variant="outlined"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditing(record);
                     setModalOpen(true);
                   }}
-                  style={{ marginRight: 8 }}
                 >
                   Edit
                 </Button>
                 <ConfirmDeleteButton onConfirm={() => deleteMutation.mutate(record.id)} loading={deleteMutation.isPending} />
-              </>
+              </Box>
             ),
           },
         ]}
       />
-      <Modal
-        title={editing ? 'Edit Product' : 'New Product'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        destroyOnHidden
-      >
-        <ProductForm
-          initial={editing}
-          onSubmit={handleSubmit}
-          submitting={createMutation.isPending || updateMutation.isPending}
-          requireImage={!editing}
-        />
-      </Modal>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{editing ? 'Edit Product' : 'New Product'}</DialogTitle>
+        <DialogContent>
+          <ProductForm
+            initial={editing}
+            onSubmit={handleSubmit}
+            submitting={createMutation.isPending || updateMutation.isPending}
+            requireImage={!editing}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Table, Rate, message } from 'antd';
+import { Rating } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ConfirmDeleteButton } from '@/components/common/ConfirmDeleteButton';
+import { ConfirmDeleteButton } from '@/components/common/ConfirmButton';
+import { DataTable } from '@/components/common/DataTable';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { reviewApi } from '@/api/reviewApi';
 import { formatDateTime } from '@/utils/format';
+import { notify } from '@/utils/notify';
 import type { ReviewResponseDto } from '@/types/review';
 import type { ApiError } from '@/types/common';
 
@@ -24,34 +26,35 @@ export function ReviewsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => reviewApi.remove(id),
     onSuccess: () => {
-      message.success('Review deleted');
+      notify.success('Review deleted');
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
     },
-    onError: (err: ApiError) => message.error(err.message),
+    onError: (err: ApiError) => notify.error(err.message),
   });
 
   return (
     <div>
       <PageHeader title="Reviews" />
-      <Table<ReviewResponseDto>
+      <DataTable<ReviewResponseDto>
         rowKey="id"
         loading={isLoading}
         dataSource={items}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
           { title: 'Product ID', dataIndex: 'productId' },
           { title: 'User ID', dataIndex: 'userId' },
-          { title: 'Rating', dataIndex: 'rating', render: (v: number) => <Rate disabled value={v} /> },
+          { title: 'Rating', dataIndex: 'rating', render: (v) => <Rating readOnly value={v as number} size="small" /> },
           { title: 'Comment', dataIndex: 'comment' },
-          { title: 'Created', dataIndex: 'createdAt', render: formatDateTime },
+          { title: 'Created', dataIndex: 'createdAt', render: (v) => formatDateTime(v as string) },
           {
             title: 'Actions',
             render: (_, record) => (

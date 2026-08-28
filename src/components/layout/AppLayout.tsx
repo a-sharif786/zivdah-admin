@@ -1,33 +1,66 @@
 import { useState } from 'react';
-import { Layout, Menu, Avatar, Tag, Dropdown, Typography } from 'antd';
-import type { MenuProps } from 'antd';
-import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  Typography,
+  Avatar,
+  Chip,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Divider,
+} from '@mui/material';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ADMIN_NAV, VENDOR_NAV } from '@/components/layout/navConfig';
 import { authApi } from '@/api/authApi';
+import { useThemeStore } from '@/store/themeStore';
+import { BRAND } from '@/theme/theme';
 
-const { Sider, Header, Content } = Layout;
-const { Text } = Typography;
+const EXPANDED_WIDTH = 232;
+const COLLAPSED_WIDTH = 72;
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN: 'gold',
-  VENDOR: 'blue',
+  ADMIN: '#eab308',
+  VENDOR: '#3b82f6',
+};
+
+const ROLE_ICONS: Record<string, typeof AdminPanelSettingsOutlinedIcon> = {
+  ADMIN: AdminPanelSettingsOutlinedIcon,
+  VENDOR: StorefrontOutlinedIcon,
 };
 
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const mode = useThemeStore((s) => s.mode);
+  const toggleMode = useThemeStore((s) => s.toggleMode);
 
   const nav = isAdmin ? ADMIN_NAV : VENDOR_NAV;
-  const selectedKey =
-    nav
-      .slice()
-      .sort((a, b) => b.path.length - a.path.length)
-      .find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))
-      ?.key ?? 'dashboard';
+  const activeItem = nav
+    .slice()
+    .sort((a, b) => b.path.length - a.path.length)
+    .find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
+  const selectedKey = activeItem?.key ?? 'dashboard';
 
   const handleLogout = async () => {
     try {
@@ -39,61 +72,256 @@ export function AppLayout() {
     navigate('/login', { replace: true });
   };
 
-  const userMenu: MenuProps['items'] = [
-    { key: 'logout', label: 'Log out', icon: <LogoutOutlined />, onClick: handleLogout },
-  ];
+  const drawerWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
-        <div
-          style={{
-            height: 48,
-            margin: 16,
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          transition: (t) => t.transitions.create('width'),
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            backgroundColor: BRAND.sider,
             color: '#fff',
-            fontWeight: 700,
-            fontSize: collapsed ? 16 : 18,
-            textAlign: 'center',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
+            border: 'none',
+            overflowX: 'hidden',
+            transition: (t) => t.transitions.create('width'),
+          },
+        }}
+      >
+        <Box sx={{ height: 72, display: 'flex', alignItems: 'center', gap: 1.25, mx: 2, overflow: 'hidden' }}>
+          <Box
+            sx={{
+              flex: '0 0 auto',
+              width: 34,
+              height: 34,
+              borderRadius: '9px',
+              background: BRAND.gradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 16,
+              boxShadow: '0 4px 10px rgba(39, 174, 96, 0.35)',
+            }}
+          >
+            Z
+          </Box>
+          {!collapsed && (
+            <Box sx={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>Zivdah</Typography>
+              <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 11.5, lineHeight: 1.2 }}>
+                {isAdmin ? 'Admin Console' : 'Vendor Console'}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <List sx={{ px: 1 }}>
+          {nav.map((item) => {
+            const selected = item.key === selectedKey;
+            return (
+              <Tooltip key={item.key} title={collapsed ? item.label : ''} placement="right">
+                <ListItemButton
+                  selected={selected}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    borderRadius: '8px',
+                    mb: 0.5,
+                    minHeight: 42,
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    color: 'rgba(255,255,255,0.75)',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                    '&.Mui-selected': {
+                      backgroundColor: BRAND.siderActive,
+                      color: '#fff',
+                    },
+                    '&.Mui-selected:hover': { backgroundColor: BRAND.siderActive },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  {!collapsed && (
+                    <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
+                  )}
+                </ListItemButton>
+              </Tooltip>
+            );
+          })}
+        </List>
+
+        <Box sx={{ flexGrow: 1 }} />
+        <List sx={{ px: 1, pb: 1 }}>
+          <ListItemButton
+            onClick={() => setCollapsed((c) => !c)}
+            sx={{
+              borderRadius: '8px',
+              minHeight: 42,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              color: 'rgba(255,255,255,0.6)',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
+              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </ListItemIcon>
+            {!collapsed && <ListItemText primary="Collapse" slotProps={{ primary: { sx: { fontSize: 13 } } }} />}
+          </ListItemButton>
+        </List>
+      </Drawer>
+
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <AppBar
+          position="sticky"
+          color="default"
+          elevation={0}
+          sx={{
+            backgroundColor: 'background.paper',
+            backgroundImage: (t) =>
+              t.palette.mode === 'dark'
+                ? 'linear-gradient(180deg, rgba(39,174,96,0.06), rgba(39,174,96,0) 60%)'
+                : 'linear-gradient(180deg, rgba(39,174,96,0.05), rgba(39,174,96,0) 60%)',
+            boxShadow: (t) =>
+              t.palette.mode === 'dark' ? '0 1px 0 rgba(255,255,255,0.06)' : '0 2px 10px rgba(15,23,42,0.05)',
+            '&::after': {
+              content: '""',
+              display: 'block',
+              height: 1.1,
+              background: BRAND.gradient,
+              opacity: 0.9,
+            },
           }}
         >
-          {collapsed ? 'ZA' : 'Zivdah Admin'}
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={nav.map((item) => ({ key: item.key, icon: item.icon, label: item.label }))}
-          onClick={({ key }) => {
-            const item = nav.find((n) => n.key === key);
-            if (item) navigate(item.path);
-          }}
-        />
-      </Sider>
-      <Layout>
-        <Header
-          style={{
-            background: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 12,
-            paddingInline: 24,
-          }}
-        >
-          {user && <Tag color={ROLE_COLORS[user.role] ?? 'default'}>{user.role}</Tag>}
-          <Dropdown menu={{ items: userMenu }} placement="bottomRight">
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar icon={<UserOutlined />} size="small" />
-              <Text>{user?.name}</Text>
-            </span>
-          </Dropdown>
-        </Header>
-        <Content style={{ margin: 24 }}>
+          <Toolbar sx={{ justifyContent: 'space-between', gap: 2, minHeight: 68 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Box sx={{ width: 4, height: 22, borderRadius: 4, background: BRAND.gradient }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: -0.2 }}>
+                {activeItem?.label ?? 'Dashboard'}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton
+                  onClick={toggleMode}
+                  aria-label="Toggle color theme"
+                  size="small"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '10px',
+                    '&:hover': { backgroundColor: `${BRAND.primary}14`, borderColor: BRAND.primary },
+                  }}
+                >
+                  {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+
+              <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+
+              {user &&
+                (() => {
+                  const RoleIcon = ROLE_ICONS[user.role] ?? AdminPanelSettingsOutlinedIcon;
+                  const roleColor = ROLE_COLORS[user.role] ?? '#94a3b8';
+                  return (
+                    <Chip
+                      icon={<RoleIcon style={{ color: roleColor }} />}
+                      label={user.role}
+                      size="small"
+                      sx={{
+                        color: roleColor,
+                        backgroundColor: `${roleColor}1f`,
+                        border: `1px solid ${roleColor}40`,
+                        fontWeight: 700,
+                        '& .MuiChip-icon': { color: roleColor },
+                      }}
+                    />
+                  );
+                })()}
+
+              <Box
+                onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                sx={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  py: 0.5,
+                  pl: 0.5,
+                  pr: 1,
+                  borderRadius: '999px',
+                  transition: 'background-color 0.15s ease',
+                  '&:hover': { backgroundColor: 'action.hover' },
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    fontSize: 15,
+                    background: BRAND.gradient,
+                    boxShadow: `0 0 0 2px ${BRAND.primary}33`,
+                  }}
+                >
+                  <PersonOutlineIcon fontSize="small" />
+                </Avatar>
+                <Typography
+                  sx={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: 600 }}
+                >
+                  {user?.name}
+                </Typography>
+                <KeyboardArrowDownIcon
+                  fontSize="small"
+                  sx={{
+                    color: 'text.secondary',
+                    transition: 'transform 0.15s ease',
+                    transform: userMenuAnchor ? 'rotate(180deg)' : 'none',
+                  }}
+                />
+              </Box>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={!!userMenuAnchor}
+                onClose={() => setUserMenuAnchor(null)}
+                slotProps={{ paper: { sx: { minWidth: 200, mt: 1 } } }}
+              >
+                <Box sx={{ px: 2, py: 1.25 }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: 14 }} noWrap>
+                    {user?.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {user?.email}
+                  </Typography>
+                </Box>
+                <Divider />
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null);
+                    handleLogout();
+                  }}
+                  sx={{ color: 'error.main', py: 1.25 }}
+                >
+                  <ListItemIcon sx={{ color: 'error.main' }}>
+                    <LogoutOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  Log out
+                </MenuItem>
+              </Menu>
+            </Box>
+          </Toolbar>
+        </AppBar>
+        <Box component="main" sx={{ m: 3, flexGrow: 1, minWidth: 0 }}>
           <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+        </Box>
+      </Box>
+    </Box>
   );
 }

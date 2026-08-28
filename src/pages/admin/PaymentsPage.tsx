@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Table, Select, Space } from 'antd';
+import { TextField, MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
+import { DataTable } from '@/components/common/DataTable';
 import { usePagedQuery } from '@/hooks/usePagedQuery';
 import { paymentApi } from '@/api/paymentApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
@@ -13,12 +14,12 @@ const STATUSES: PaymentStatus[] = ['PENDING', 'PROCESSING', 'SUCCESS', 'FAILED',
 export function PaymentsPage() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
-  const [status, setStatus] = useState<PaymentStatus | undefined>(undefined);
+  const [status, setStatus] = useState<PaymentStatus | ''>('');
   const navigate = useNavigate();
 
   const { items, total, isLoading } = usePagedQuery<PaymentResponseDto>(
-    ['admin-payments', status ?? 'ALL'],
-    (p, s) => paymentApi.getAll(p, s, status),
+    ['admin-payments', status || 'ALL'],
+    (p, s) => paymentApi.getAll(p, s, status || undefined),
     page,
     size
   );
@@ -28,43 +29,49 @@ export function PaymentsPage() {
       <PageHeader
         title="Payments"
         extra={
-          <Space>
-            <Select
-              allowClear
-              placeholder="Filter by status"
-              style={{ width: 200 }}
-              options={STATUSES.map((s) => ({ label: s, value: s }))}
-              value={status}
-              onChange={(v) => {
-                setStatus(v);
-                setPage(0);
-              }}
-            />
-          </Space>
+          <TextField
+            select
+            size="small"
+            label="Filter by status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as PaymentStatus | '');
+              setPage(0);
+            }}
+            sx={{ width: 200 }}
+          >
+            <MenuItem value="">All</MenuItem>
+            {STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
+          </TextField>
         }
       />
-      <Table<PaymentResponseDto>
+      <DataTable<PaymentResponseDto>
         rowKey="paymentId"
         loading={isLoading}
         dataSource={items}
-        onRow={(record) => ({ onClick: () => navigate(`/admin/payments/${record.paymentId}`) })}
+        onRowClick={(record) => navigate(`/admin/payments/${record.paymentId}`)}
         pagination={{
-          current: page + 1,
+          page,
           pageSize: size,
           total,
-          onChange: (p, s) => {
-            setPage(p - 1);
+          onPageChange: setPage,
+          onRowsPerPageChange: (s) => {
             setSize(s);
+            setPage(0);
           },
         }}
         columns={[
           { title: 'Payment ID', dataIndex: 'paymentId' },
           { title: 'Order ID', dataIndex: 'orderId' },
           { title: 'User ID', dataIndex: 'userId' },
-          { title: 'Amount', dataIndex: 'amount', render: (v: number, r) => formatCurrency(v, r.currency) },
+          { title: 'Amount', dataIndex: 'amount', render: (v, r) => formatCurrency(v as number, r.currency) },
           { title: 'Method', dataIndex: 'method' },
-          { title: 'Status', dataIndex: 'status', render: (v: string) => <StatusTag value={v} /> },
-          { title: 'Created', dataIndex: 'createdAt', render: formatDateTime },
+          { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
+          { title: 'Created', dataIndex: 'createdAt', render: (v) => formatDateTime(v as string) },
         ]}
       />
     </div>

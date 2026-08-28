@@ -1,5 +1,8 @@
-import { Form, Input, InputNumber, Select, DatePicker, Button } from 'antd';
-import dayjs from 'dayjs';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { TextField, MenuItem, Button, Stack } from '@mui/material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs, { type Dayjs } from 'dayjs';
 import type { CouponRequestDto } from '@/types/coupon';
 
 export function CouponForm({
@@ -9,59 +12,121 @@ export function CouponForm({
   onSubmit: (dto: CouponRequestDto) => void;
   submitting?: boolean;
 }) {
-  const [form] = Form.useForm();
+  const [code, setCode] = useState('');
+  const [description, setDescription] = useState('');
+  const [discountType, setDiscountType] = useState<CouponRequestDto['discountType']>('PERCENTAGE');
+  const [discountValue, setDiscountValue] = useState('');
+  const [minOrderAmount, setMinOrderAmount] = useState('');
+  const [maxDiscountAmount, setMaxDiscountAmount] = useState('');
+  const [usageLimit, setUsageLimit] = useState('');
+  const [validFrom, setValidFrom] = useState<Dayjs | null>(dayjs());
+  const [validUntil, setValidUntil] = useState<Dayjs | null>(dayjs().add(1, 'month'));
+  const [touched, setTouched] = useState(false);
 
-  const handleFinish = (values: Record<string, unknown>) => {
-    const range = values.validRange as [dayjs.Dayjs, dayjs.Dayjs];
+  const errors = {
+    code: !code,
+    discountValue: !discountValue,
+    usageLimit: !usageLimit,
+    validRange: !validFrom || !validUntil,
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setTouched(true);
+    if (Object.values(errors).some(Boolean) || !validFrom || !validUntil) return;
+
     onSubmit({
-      code: (values.code as string).toUpperCase(),
-      description: values.description as string | undefined,
-      discountType: values.discountType as CouponRequestDto['discountType'],
-      discountValue: values.discountValue as number,
-      minOrderAmount: values.minOrderAmount as number | undefined,
-      maxDiscountAmount: values.maxDiscountAmount as number | undefined,
-      usageLimit: values.usageLimit as number,
-      validFrom: range[0].format('YYYY-MM-DDTHH:mm:ss'),
-      validUntil: range[1].format('YYYY-MM-DDTHH:mm:ss'),
+      code: code.toUpperCase(),
+      description: description || undefined,
+      discountType,
+      discountValue: Number(discountValue),
+      minOrderAmount: minOrderAmount ? Number(minOrderAmount) : undefined,
+      maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : undefined,
+      usageLimit: Number(usageLimit),
+      validFrom: validFrom.format('YYYY-MM-DDTHH:mm:ss'),
+      validUntil: validUntil.format('YYYY-MM-DDTHH:mm:ss'),
     });
   };
 
   return (
-    <Form form={form} layout="vertical" onFinish={handleFinish}>
-      <Form.Item name="code" label="Coupon Code" rules={[{ required: true }]}>
-        <Input style={{ textTransform: 'uppercase' }} />
-      </Form.Item>
-      <Form.Item name="description" label="Description">
-        <Input.TextArea rows={2} />
-      </Form.Item>
-      <Form.Item name="discountType" label="Discount Type" rules={[{ required: true }]} initialValue="PERCENTAGE">
-        <Select
-          options={[
-            { label: 'Percentage', value: 'PERCENTAGE' },
-            { label: 'Fixed Amount', value: 'FIXED' },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item name="discountValue" label="Discount Value" rules={[{ required: true }]}>
-        <InputNumber min={0} style={{ width: '100%' }} />
-      </Form.Item>
-      <Form.Item name="minOrderAmount" label="Minimum Order Amount">
-        <InputNumber min={0} style={{ width: '100%' }} />
-      </Form.Item>
-      <Form.Item name="maxDiscountAmount" label="Maximum Discount Amount">
-        <InputNumber min={0} style={{ width: '100%' }} />
-      </Form.Item>
-      <Form.Item name="usageLimit" label="Usage Limit" rules={[{ required: true }]}>
-        <InputNumber min={1} style={{ width: '100%' }} />
-      </Form.Item>
-      <Form.Item name="validRange" label="Valid From / Until" rules={[{ required: true }]}>
-        <DatePicker.RangePicker showTime style={{ width: '100%' }} />
-      </Form.Item>
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={submitting} block>
-          Create Coupon
-        </Button>
-      </Form.Item>
-    </Form>
+    <Stack component="form" onSubmit={handleSubmit} spacing={2.25} sx={{ pt: 1 }}>
+      <TextField
+        label="Coupon Code"
+        value={code}
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        error={touched && errors.code}
+        helperText={touched && errors.code ? 'Coupon code is required' : undefined}
+        fullWidth
+        required
+      />
+      <TextField
+        label="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        multiline
+        rows={2}
+        fullWidth
+      />
+      <TextField
+        select
+        label="Discount Type"
+        value={discountType}
+        onChange={(e) => setDiscountType(e.target.value as CouponRequestDto['discountType'])}
+        fullWidth
+        required
+      >
+        <MenuItem value="PERCENTAGE">Percentage</MenuItem>
+        <MenuItem value="FIXED">Fixed Amount</MenuItem>
+      </TextField>
+      <TextField
+        label="Discount Value"
+        type="number"
+        value={discountValue}
+        onChange={(e) => setDiscountValue(e.target.value)}
+        error={touched && errors.discountValue}
+        helperText={touched && errors.discountValue ? 'Discount value is required' : undefined}
+        fullWidth
+        required
+      />
+      <TextField
+        label="Minimum Order Amount"
+        type="number"
+        value={minOrderAmount}
+        onChange={(e) => setMinOrderAmount(e.target.value)}
+        fullWidth
+      />
+      <TextField
+        label="Maximum Discount Amount"
+        type="number"
+        value={maxDiscountAmount}
+        onChange={(e) => setMaxDiscountAmount(e.target.value)}
+        fullWidth
+      />
+      <TextField
+        label="Usage Limit"
+        type="number"
+        value={usageLimit}
+        onChange={(e) => setUsageLimit(e.target.value)}
+        error={touched && errors.usageLimit}
+        helperText={touched && errors.usageLimit ? 'Usage limit is required' : undefined}
+        fullWidth
+        required
+      />
+      <DateTimePicker
+        label="Valid From"
+        value={validFrom}
+        onChange={setValidFrom}
+        slotProps={{ textField: { fullWidth: true, required: true, error: touched && !validFrom } }}
+      />
+      <DateTimePicker
+        label="Valid Until"
+        value={validUntil}
+        onChange={setValidUntil}
+        slotProps={{ textField: { fullWidth: true, required: true, error: touched && !validUntil } }}
+      />
+      <Button type="submit" variant="contained" size="large" loading={submitting}>
+        Create Coupon
+      </Button>
+    </Stack>
   );
 }
