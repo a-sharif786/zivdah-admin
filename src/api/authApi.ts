@@ -6,6 +6,7 @@ import type {
   RegisterRequest,
   UpdateRoleRequest,
   UpdateUserProfileRequest,
+  UserStatsResponseDTO,
   VerifyOtpRequest,
 } from '@/types/auth';
 
@@ -22,6 +23,8 @@ export const authApi = {
   register: (payload: RegisterRequest) => apiClient.post<void>(`${BASE}/register`, payload).then((r) => r.data),
 
   getAllUsers: () => apiClient.get<AuthUserResponseDTO[]>(`${BASE}/all-users`).then((r) => r.data),
+
+  getStats: () => apiClient.get<UserStatsResponseDTO>(`${BASE}/stats`).then((r) => r.data),
 
   getUserById: (userId: number) =>
     apiClient.get<LoginResponseDTO>(`${BASE}/byUserId/${userId}`).then((r) => r.data),

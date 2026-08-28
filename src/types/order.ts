@@ -10,6 +10,30 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED';
 
+// Mirrors OrderServiceImpl.ALLOWED_TRANSITIONS (order-service) — used to populate the status
+// dropdown with only legal next states. The backend re-validates regardless.
+export const NEXT_ORDER_STATUSES: Record<OrderStatus, OrderStatus[]> = {
+  CREATED: ['PAYMENT_PENDING', 'PAID', 'CANCELLED'],
+  PAYMENT_PENDING: ['PAID', 'CANCELLED'],
+  PAID: ['CONFIRMED', 'CANCELLED', 'REFUNDED'],
+  CONFIRMED: ['PACKING', 'CANCELLED', 'REFUNDED'],
+  PACKING: ['READY_FOR_DELIVERY', 'REFUNDED'],
+  READY_FOR_DELIVERY: ['OUT_FOR_DELIVERY', 'REFUNDED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'REFUNDED'],
+  DELIVERED: ['REFUNDED'],
+  CANCELLED: [],
+  REFUNDED: [],
+};
+
+export interface OrderStatsResponseDto {
+  // All-time count, unaffected by the range used to fetch this.
+  totalOrders: number;
+  // Everything below is scoped to the requested [from, to] range.
+  ordersInRange: number;
+  statusBreakdown: Partial<Record<OrderStatus, number>>;
+  revenueInRange: number;
+}
+
 export interface OrderItemDto {
   productId: number;
   // Denormalized from the product's vendorId at checkout time. Null = platform-owned product.

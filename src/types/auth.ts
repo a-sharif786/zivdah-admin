@@ -47,6 +47,13 @@ export interface UpdateUserProfileRequest {
   name: string;
 }
 
+export interface UserStatsResponseDTO {
+  totalUsers: number;
+  totalAdmins: number;
+  totalVendors: number;
+  totalCustomers: number;
+}
+
 // Decoded JWT payload (userId + role claims, mobile as subject).
 export interface DecodedToken {
   sub: string;

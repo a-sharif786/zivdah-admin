@@ -28,6 +28,8 @@ export const productApi = {
 
   getCategories: () => apiClient.get<ProductCategory[]>(`${BASE}/categories`).then((r) => r.data),
 
+  getCount: () => apiClient.get<number>(`${BASE}/count`).then((r) => r.data),
+
   getByVendor: (vendorId: number, page: number, size: number) =>
     apiClient
       .get<ProductResponseDto[]>(`${BASE}/vendor/${vendorId}`, { params: { page, size } })

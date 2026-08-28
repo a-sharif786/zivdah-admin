@@ -10,6 +10,17 @@ export type PaymentMethod =
 
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
 
+export interface DailyAmountDto {
+  date: string; // ISO date (yyyy-MM-dd)
+  amount: number;
+}
+
+export interface PaymentStatsResponseDto {
+  totalReceivedAllTime: number;
+  totalReceivedInRange: number;
+  series: DailyAmountDto[];
+}
+
 export interface PaymentResponseDto {
   paymentId: number;
   orderId: number;

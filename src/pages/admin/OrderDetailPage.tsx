@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Descriptions, Table, Button, Popconfirm, message, Space } from 'antd';
+import { Descriptions, Table, Button, Popconfirm, Select, message, Space } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
 import { orderApi } from '@/api/orderApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
-import type { OrderItemDto } from '@/types/order';
+import { NEXT_ORDER_STATUSES } from '@/types/order';
+import type { OrderItemDto, OrderStatus } from '@/types/order';
 import type { ApiError } from '@/types/common';
 
 export function OrderDetailPage() {
@@ -13,6 +15,7 @@ export function OrderDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const id = Number(orderId);
+  const [nextStatus, setNextStatus] = useState<OrderStatus | undefined>(undefined);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', id],
@@ -29,9 +32,20 @@ export function OrderDetailPage() {
     onError: (err: ApiError) => message.error(err.message),
   });
 
+  const statusMutation = useMutation({
+    mutationFn: (status: OrderStatus) => orderApi.updateStatus(id, status),
+    onSuccess: (updated) => {
+      message.success(`Order status updated to ${updated.status}`);
+      setNextStatus(undefined);
+      queryClient.invalidateQueries({ queryKey: ['order', id] });
+    },
+    onError: (err: ApiError) => message.error(err.message),
+  });
+
   if (isLoading || !order) return <PageHeader title="Loading order..." />;
 
   const cancellable = !['DELIVERED', 'CANCELLED', 'REFUNDED'].includes(order.status);
+  const options = NEXT_ORDER_STATUSES[order.status] ?? [];
 
   return (
     <div>
@@ -40,6 +54,25 @@ export function OrderDetailPage() {
         extra={
           <Space>
             <Button onClick={() => navigate('/admin/orders')}>Back</Button>
+            {options.length > 0 && (
+              <Space.Compact>
+                <Select
+                  style={{ width: 200 }}
+                  placeholder="Change status to..."
+                  value={nextStatus}
+                  onChange={setNextStatus}
+                  options={options.map((s) => ({ label: s, value: s }))}
+                />
+                <Button
+                  type="primary"
+                  disabled={!nextStatus}
+                  loading={statusMutation.isPending}
+                  onClick={() => nextStatus && statusMutation.mutate(nextStatus)}
+                >
+                  Update
+                </Button>
+              </Space.Compact>
+            )}
             {cancellable && (
               <Popconfirm title="Cancel this order?" onConfirm={() => cancelMutation.mutate()}>
                 <Button danger loading={cancelMutation.isPending}>
