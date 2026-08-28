@@ -15,7 +15,7 @@ export const BRAND = {
   primaryHover: '#1e8449',
   gradient: 'linear-gradient(135deg, #1e8449 0%, #27ae60 50%, #58d68d 100%)',
   sider: '#2c3e50', // same dark navy as zivdah-web's secondary nav bar
-  siderActive: 'rgba(39, 174, 96, 0.22)',
+  siderActive: 'rgba(39, 174, 96, 0.30)', // was 0.22 — too washed out against #2c3e50, hard to tell active from hover
   radius: 10,
   fontFamily:
     "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",

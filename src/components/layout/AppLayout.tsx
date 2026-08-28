@@ -140,6 +140,7 @@ export function AppLayout() {
                     '&.Mui-selected': {
                       backgroundColor: BRAND.siderActive,
                       color: '#fff',
+                      boxShadow: `inset 3px 0 0 0 ${BRAND.primary}`,
                     },
                     '&.Mui-selected:hover': { backgroundColor: BRAND.siderActive },
                   }}
