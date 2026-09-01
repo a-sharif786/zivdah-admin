@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'ADMIN' | 'VENDOR';
+export type Role = 'USER' | 'ADMIN' | 'VENDOR' | 'DELIVERY_BOY';
 
 export interface LoginRequest {
   mobile?: string;

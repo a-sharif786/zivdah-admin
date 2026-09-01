@@ -13,6 +13,11 @@ const COLOR_MAP: Record<string, string> = {
   DELIVERED: '#22c55e',
   CANCELLED: '#ef4444',
   REFUNDED: '#f97316',
+  // Delivery sub-statuses (READY_FOR_PICKUP shares PACKING's color family)
+  PACKED: '#6366f1',
+  READY_FOR_PICKUP: '#a855f7',
+  PICKED_UP: '#eab308',
+  ON_THE_WAY: '#eab308',
   // Payment statuses
   PENDING: '#f59e0b',
   PROCESSING: '#3b82f6',
@@ -24,6 +29,7 @@ const COLOR_MAP: Record<string, string> = {
   ADMIN: '#eab308',
   VENDOR: '#3b82f6',
   USER: '#94a3b8',
+  DELIVERY_BOY: '#06b6d4',
 };
 
 export function StatusTag({ value }: { value: string | null | undefined }) {

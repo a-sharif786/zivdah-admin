@@ -69,6 +69,7 @@ export function NotificationsPage() {
           { title: 'User ID', dataIndex: 'userId' },
           { title: 'Title', dataIndex: 'title' },
           { title: 'Message', dataIndex: 'message' },
+          { title: 'Type', dataIndex: 'notificationType', render: (v) => (v ? <StatusTag value={v as string} /> : '-') },
           { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
           { title: 'Created', dataIndex: 'createdAt', render: (v) => formatDateTime(v as string) },
         ]}

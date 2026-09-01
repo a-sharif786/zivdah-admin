@@ -6,6 +6,12 @@ export interface NotificationResponseDto {
   status: string;
   createdAt: string;
   updatedAt: string;
+  recipientRole?: string;
+  notificationType?: string;
+  entityType?: string;
+  entityId?: number;
+  isRead: boolean;
+  readAt?: string;
 }
 
 export interface SendNotificationRequest {

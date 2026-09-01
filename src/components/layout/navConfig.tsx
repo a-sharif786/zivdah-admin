@@ -35,5 +35,6 @@ export const VENDOR_NAV: NavItem[] = [
   { key: 'products', path: '/vendor/products', label: 'My Products', icon: <Inventory2OutlinedIcon /> },
   { key: 'orders', path: '/vendor/orders', label: 'My Orders', icon: <ShoppingCartOutlinedIcon /> },
   { key: 'inventory', path: '/vendor/inventory', label: 'My Inventory', icon: <StorageOutlinedIcon /> },
+  { key: 'notifications', path: '/vendor/notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon /> },
   { key: 'reviews', path: '/vendor/reviews', label: 'My Reviews', icon: <StarOutlineOutlinedIcon /> },
 ];

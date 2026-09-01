@@ -80,7 +80,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const response = await authApi.verifyOtp({ mobile: otpMobile, otp, deviceToken: getDeviceToken() });
+      const response = await authApi.verifyOtp({ mobile: otpMobile, otp, deviceToken: await getDeviceToken() });
       finishLogin(response);
     } catch (err) {
       setError((err as ApiError).message);

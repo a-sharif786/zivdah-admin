@@ -28,6 +28,8 @@ import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettin
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useFcmBootstrap } from '@/hooks/useFcmBootstrap';
+import { getFcmToken } from '@/firebase';
 import { ADMIN_NAV, VENDOR_NAV } from '@/components/layout/navConfig';
 import { authApi } from '@/api/authApi';
 import { useThemeStore } from '@/store/themeStore';
@@ -50,6 +52,7 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
   const { user, isAdmin, logout } = useAuth();
+  useFcmBootstrap();
   const navigate = useNavigate();
   const location = useLocation();
   const mode = useThemeStore((s) => s.mode);
@@ -64,7 +67,11 @@ export function AppLayout() {
 
   const handleLogout = async () => {
     try {
-      await authApi.logout();
+      // Only deactivates this browser's push registration — other signed-in
+      // devices/browsers stay registered. Resolves from Firebase's local cache, so this
+      // doesn't re-prompt for permission.
+      const fcmToken = await getFcmToken();
+      await authApi.logout(fcmToken ?? undefined);
     } catch {
       // best-effort; proceed to clear local session regardless
     }

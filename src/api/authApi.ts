@@ -39,5 +39,13 @@ export const authApi = {
 
   deactivateUser: (userId: number) => apiClient.put<void>(`${BASE}/deactivate/${userId}`).then((r) => r.data),
 
-  logout: () => apiClient.post<void>(`${BASE}/logout`).then((r) => r.data),
+  // fcmToken is optional — when passed, only this device's push registration is
+  // deactivated, other signed-in devices/browsers stay registered.
+  logout: (fcmToken?: string) =>
+    apiClient.post<void>(`${BASE}/logout`, fcmToken ? { fcmToken } : {}).then((r) => r.data),
+
+  // Registers/refreshes one device's FCM token — a user may be signed in on several
+  // devices/browsers at once, each becomes its own row server-side (see device_tokens).
+  registerDeviceToken: (fcmToken: string, deviceType: 'WEB' | 'ANDROID' | 'IOS' = 'WEB') =>
+    apiClient.post<void>(`${BASE}/device-tokens`, { fcmToken, deviceType }).then((r) => r.data),
 };
