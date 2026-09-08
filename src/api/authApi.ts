@@ -24,6 +24,11 @@ export const authApi = {
 
   getAllUsers: () => apiClient.get<AuthUserResponseDTO[]>(`${BASE}/all-users`).then((r) => r.data),
 
+  // Narrower than getAllUsers (ADMIN-only) — the only user-listing endpoint a VENDOR is
+  // allowed to call, for populating the assign-delivery-boy dropdown (see
+  // OrderDetailPage.tsx / DeliveryAssignmentTable.tsx).
+  getDeliveryBoys: () => apiClient.get<AuthUserResponseDTO[]>(`${BASE}/delivery-boys`).then((r) => r.data),
+
   getStats: () => apiClient.get<UserStatsResponseDTO>(`${BASE}/stats`).then((r) => r.data),
 
   getUserById: (userId: number) =>

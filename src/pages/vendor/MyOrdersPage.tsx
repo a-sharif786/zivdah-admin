@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
 import { DataTable } from '@/components/common/DataTable';
@@ -12,6 +13,7 @@ import type { OrderResponseDto } from '@/types/order';
 export function MyOrdersPage() {
   const { user } = useAuth();
   const vendorId = user!.id;
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
@@ -29,6 +31,7 @@ export function MyOrdersPage() {
         rowKey="orderId"
         loading={isLoading}
         dataSource={items}
+        onRowClick={(record) => navigate(`/vendor/orders/${record.orderId}`)}
         pagination={{
           page,
           pageSize: size,

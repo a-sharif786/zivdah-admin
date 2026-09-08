@@ -23,6 +23,7 @@ import { ReviewsPage } from '@/pages/admin/ReviewsPage';
 import { VendorDashboardPage } from '@/pages/vendor/VendorDashboardPage';
 import { MyProductsPage } from '@/pages/vendor/MyProductsPage';
 import { MyOrdersPage } from '@/pages/vendor/MyOrdersPage';
+import { OrderDetailPage as VendorOrderDetailPage } from '@/pages/vendor/OrderDetailPage';
 import { MyInventoryPage } from '@/pages/vendor/MyInventoryPage';
 import { MyNotificationsPage } from '@/pages/vendor/MyNotificationsPage';
 import { MyReviewsPage } from '@/pages/vendor/MyReviewsPage';
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
               { index: true, element: <VendorDashboardPage /> },
               { path: 'products', element: <MyProductsPage /> },
               { path: 'orders', element: <MyOrdersPage /> },
+              { path: 'orders/:orderId', element: <VendorOrderDetailPage /> },
               { path: 'inventory', element: <MyInventoryPage /> },
               { path: 'notifications', element: <MyNotificationsPage /> },
               { path: 'reviews', element: <MyReviewsPage /> },
