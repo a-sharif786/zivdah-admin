@@ -21,4 +21,9 @@ export const deliveryApi = {
     apiClient
       .get<DeliveryResponseDto[]>(`${BASE}/vendor/${vendorId}`, { params: { page, size } })
       .then((r) => r.data),
+
+  // A delivery boy's own assigned deliveries — no path id needed, scoped to the caller
+  // server-side (DeliveryController#getMyDeliveries, hasRole('DELIVERY_BOY')).
+  getMy: (page: number, size: number) =>
+    apiClient.get<DeliveryResponseDto[]>(`${BASE}/my`, { params: { page, size } }).then((r) => r.data),
 };

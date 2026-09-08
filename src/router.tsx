@@ -27,6 +27,9 @@ import { MyInventoryPage } from '@/pages/vendor/MyInventoryPage';
 import { MyNotificationsPage } from '@/pages/vendor/MyNotificationsPage';
 import { MyReviewsPage } from '@/pages/vendor/MyReviewsPage';
 
+import { DeliveryDashboardPage } from '@/pages/delivery/DeliveryDashboardPage';
+import { MyDeliveriesPage } from '@/pages/delivery/MyDeliveriesPage';
+
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
@@ -69,6 +72,19 @@ export const router = createBrowserRouter([
               { path: 'inventory', element: <MyInventoryPage /> },
               { path: 'notifications', element: <MyNotificationsPage /> },
               { path: 'reviews', element: <MyReviewsPage /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <RoleRoute allowed={['DELIVERY_BOY']} />,
+        children: [
+          {
+            path: '/delivery',
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <DeliveryDashboardPage /> },
+              { path: 'orders', element: <MyDeliveriesPage /> },
             ],
           },
         ],

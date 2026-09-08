@@ -8,6 +8,7 @@ import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import type { ReactNode } from 'react';
 
 export interface NavItem {
@@ -37,4 +38,9 @@ export const VENDOR_NAV: NavItem[] = [
   { key: 'inventory', path: '/vendor/inventory', label: 'My Inventory', icon: <StorageOutlinedIcon /> },
   { key: 'notifications', path: '/vendor/notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon /> },
   { key: 'reviews', path: '/vendor/reviews', label: 'My Reviews', icon: <StarOutlineOutlinedIcon /> },
+];
+
+export const DELIVERY_NAV: NavItem[] = [
+  { key: 'dashboard', path: '/delivery', label: 'Dashboard', icon: <DashboardOutlinedIcon /> },
+  { key: 'deliveries', path: '/delivery/orders', label: 'My Deliveries', icon: <LocalShippingOutlinedIcon /> },
 ];

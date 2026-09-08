@@ -18,3 +18,22 @@ export function formatDate(value: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString('en-IN', { dateStyle: 'medium' });
 }
+
+export function formatAddress(order: {
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPinCode?: string;
+  deliveryCountry?: string;
+}): string {
+  const parts = [
+    order.deliveryAddressLine1,
+    order.deliveryAddressLine2,
+    order.deliveryCity,
+    order.deliveryState,
+    order.deliveryPinCode,
+    order.deliveryCountry,
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : '-';
+}

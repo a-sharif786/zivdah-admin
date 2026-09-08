@@ -6,5 +6,6 @@ export function RootRedirect() {
   const role = useAuthStore((s) => s.user?.role);
   if (role === 'ADMIN') return <Navigate to="/admin" replace />;
   if (role === 'VENDOR') return <Navigate to="/vendor" replace />;
+  if (role === 'DELIVERY_BOY') return <Navigate to="/delivery" replace />;
   return <Navigate to="/access-denied" replace />;
 }

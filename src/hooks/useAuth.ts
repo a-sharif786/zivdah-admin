@@ -10,6 +10,7 @@ export function useAuth() {
     isAuthenticated: !!token && !!user,
     isAdmin: user?.role === 'ADMIN',
     isVendor: user?.role === 'VENDOR',
+    isDeliveryBoy: user?.role === 'DELIVERY_BOY',
     logout,
   };
 }

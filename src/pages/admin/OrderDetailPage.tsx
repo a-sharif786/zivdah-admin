@@ -53,10 +53,13 @@ export function OrderDetailPage() {
     enabled: Number.isFinite(id),
   });
 
+  // Only active/verified delivery boys are assignable — an inactive account can't log in to
+  // pick the order up anyway (see AuthServiceImpl's active check at login), so offering one
+  // here would just assign a delivery nobody can ever act on.
   const { data: deliveryBoys } = useQuery({
     queryKey: ['delivery-boy-users'],
     queryFn: () => authApi.getAllUsers(),
-    select: (users) => users.filter((u) => u.role === 'DELIVERY_BOY'),
+    select: (users) => users.filter((u) => u.role === 'DELIVERY_BOY' && u.active),
   });
 
   const assignMutation = useMutation({
@@ -194,7 +197,14 @@ export function OrderDetailPage() {
         dataSource={deliveries ?? []}
         emptyText="No delivery record yet — created once the order is confirmed"
         columns={[
-          { title: 'Vendor', dataIndex: 'vendorId', render: (v) => `#${v}` },
+          {
+            title: 'Vendor',
+            dataIndex: 'vendorId',
+            // null = platform-owned items on this order, no single vendor to attribute the
+            // delivery to (see OrderServiceClient#getVendorIds) — same "Platform" fallback the
+            // Order Items table above uses for the same null.
+            render: (v) => (v ? `#${v}` : 'Platform'),
+          },
           { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
           { title: 'Delivery Boy', dataIndex: 'deliveryBoyId', render: (v) => (v ? `#${v}` : 'Unassigned') },
           {

@@ -32,12 +32,13 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   const finishLogin = (response: LoginResponseDTO) => {
-    if (response.role !== 'ADMIN' && response.role !== 'VENDOR') {
-      setError('Only Admin and Vendor accounts are allowed to access the Zivdah Admin Panel..');
+    if (response.role !== 'ADMIN' && response.role !== 'VENDOR' && response.role !== 'DELIVERY_BOY') {
+      setError('Only Admin, Vendor, and Delivery accounts are allowed to access the Zivdah Admin Panel.');
       return;
     }
     login(response);
-    navigate(response.role === 'ADMIN' ? '/admin' : '/vendor', { replace: true });
+    const home = response.role === 'ADMIN' ? '/admin' : response.role === 'VENDOR' ? '/vendor' : '/delivery';
+    navigate(home, { replace: true });
   };
 
   const switchMode = (v: 'mobile' | 'email') => {
@@ -166,7 +167,7 @@ export function LoginPage() {
             Welcome back
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 3 }}>
-            Sign in to the Admin &amp; Vendor Portal
+            Sign in to the Admin, Vendor &amp; Delivery Portal
           </Typography>
 
           <ToggleButtonGroup

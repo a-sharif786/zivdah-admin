@@ -26,11 +26,12 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFcmBootstrap } from '@/hooks/useFcmBootstrap';
 import { getFcmToken } from '@/firebase';
-import { ADMIN_NAV, VENDOR_NAV } from '@/components/layout/navConfig';
+import { ADMIN_NAV, VENDOR_NAV, DELIVERY_NAV } from '@/components/layout/navConfig';
 import { authApi } from '@/api/authApi';
 import { useThemeStore } from '@/store/themeStore';
 import { BRAND } from '@/theme/theme';
@@ -41,24 +42,32 @@ const COLLAPSED_WIDTH = 72;
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: '#eab308',
   VENDOR: '#3b82f6',
+  DELIVERY_BOY: '#06b6d4',
 };
 
 const ROLE_ICONS: Record<string, typeof AdminPanelSettingsOutlinedIcon> = {
   ADMIN: AdminPanelSettingsOutlinedIcon,
   VENDOR: StorefrontOutlinedIcon,
+  DELIVERY_BOY: LocalShippingOutlinedIcon,
+};
+
+const CONSOLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin Console',
+  VENDOR: 'Vendor Console',
+  DELIVERY_BOY: 'Delivery Console',
 };
 
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isVendor, logout } = useAuth();
   useFcmBootstrap();
   const navigate = useNavigate();
   const location = useLocation();
   const mode = useThemeStore((s) => s.mode);
   const toggleMode = useThemeStore((s) => s.toggleMode);
 
-  const nav = isAdmin ? ADMIN_NAV : VENDOR_NAV;
+  const nav = isAdmin ? ADMIN_NAV : isVendor ? VENDOR_NAV : DELIVERY_NAV;
   const activeItem = nav
     .slice()
     .sort((a, b) => b.path.length - a.path.length)
@@ -123,7 +132,7 @@ export function AppLayout() {
             <Box sx={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>Zivdah</Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 11.5, lineHeight: 1.2 }}>
-                {isAdmin ? 'Admin Console' : 'Vendor Console'}
+                {user ? (CONSOLE_LABELS[user.role] ?? 'Console') : 'Console'}
               </Typography>
             </Box>
           )}
