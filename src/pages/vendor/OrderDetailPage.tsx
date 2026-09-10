@@ -21,7 +21,7 @@ function DescriptionItem({ label, value, span = 1 }: { label: string; value: Rea
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="body2">{value}</Typography>
+      <Typography variant="body2" component="div">{value}</Typography>
     </Grid>
   );
 }
@@ -69,6 +69,13 @@ export function OrderDetailPage() {
   // vendor-scoping server-side on that endpoint) — filter to this vendor's own items for
   // display, same as MyOrdersPage.tsx's row-level item count.
   const myItems = order.items.filter((i) => i.vendorId === vendorId);
+
+console.log("vendorId:", vendorId);
+console.log("vendorId:", myItems);
+order.items.forEach((item) => {
+  console.log("item.vendorId:", item.vendorId);
+  console.log("match:", item.vendorId === vendorId);
+});
   // REFUNDED is a financial action gated to ADMIN server-side (OrderServiceImpl#updateStatus)
   // — dropped here rather than offering a button guaranteed to 403.
   const options = (NEXT_ORDER_STATUSES[order.status] ?? []).filter((s) => s !== 'REFUNDED');

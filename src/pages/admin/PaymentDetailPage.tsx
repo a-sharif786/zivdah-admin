@@ -16,7 +16,7 @@ function DescriptionItem({ label, value }: { label: string; value: ReactNode }) 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="body2">{value}</Typography>
+      <Typography variant="body2" component="div">{value}</Typography>
     </Grid>
   );
 }

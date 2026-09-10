@@ -21,7 +21,7 @@ function DescriptionItem({ label, value, span = 1 }: { label: string; value: Rea
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
         {label}
       </Typography>
-      <Typography variant="body2">{value}</Typography>
+      <Typography variant="body2" component="div">{value}</Typography>
     </Grid>
   );
 }
