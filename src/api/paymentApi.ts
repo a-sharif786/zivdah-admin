@@ -15,6 +15,9 @@ export const paymentApi = {
   markFailed: (paymentId: number) =>
     apiClient.put<PaymentResponseDto>(`${BASE}/failed/${paymentId}`).then((r) => r.data),
 
+  refund: (paymentId: number, amount: number) =>
+    apiClient.put<PaymentResponseDto>(`${BASE}/refund/${paymentId}`, { amount }).then((r) => r.data),
+
   getAll: (page: number, size: number, status?: PaymentStatus) =>
     apiClient
       .get<PaymentResponseDto[]>(`${BASE}/all`, { params: { page, size, status } })

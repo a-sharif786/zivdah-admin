@@ -1,6 +1,18 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Paper, Grid, Typography, Button, Stack } from '@mui/material';
+import {
+  Paper,
+  Grid,
+  Typography,
+  Button,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+} from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
@@ -53,9 +65,34 @@ export function PaymentDetailPage() {
     onError: (err: ApiError) => notify.error(err.message),
   });
 
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+
+  const refundMutation = useMutation({
+    mutationFn: (amount: number) => paymentApi.refund(id, amount),
+    onSuccess: () => {
+      notify.success('Refund processed');
+      setRefundOpen(false);
+      invalidate();
+    },
+    onError: (err: ApiError) => notify.error(err.message),
+  });
+
   if (isLoading || !payment) return <PageHeader title="Loading payment..." />;
 
   const isTerminal = ['SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(payment.status);
+  const alreadyRefunded = payment.refundAmount ?? 0;
+  const remainingRefundable = payment.amount - alreadyRefunded;
+  const refundable = (payment.status === 'SUCCESS' || payment.status === 'REFUNDED') && remainingRefundable > 0;
+
+  const openRefundDialog = () => {
+    setRefundAmount(remainingRefundable.toFixed(2));
+    setRefundOpen(true);
+  };
+
+  const parsedRefundAmount = Number(refundAmount);
+  const refundAmountValid =
+    refundAmount.trim() !== '' && parsedRefundAmount > 0 && parsedRefundAmount <= remainingRefundable;
 
   return (
     <div>
@@ -86,6 +123,11 @@ export function PaymentDetailPage() {
                 </ConfirmButton>
               </>
             )}
+            {refundable && (
+              <Button variant="outlined" color="warning" onClick={openRefundDialog}>
+                Refund
+              </Button>
+            )}
           </Stack>
         }
       />
@@ -100,8 +142,53 @@ export function PaymentDetailPage() {
           <DescriptionItem label="Gateway" value={payment.gatewayName ?? '-'} />
           <DescriptionItem label="Created" value={formatDateTime(payment.createdAt)} />
           <DescriptionItem label="Paid At" value={formatDateTime(payment.paidAt)} />
+          {alreadyRefunded > 0 && (
+            <>
+              <DescriptionItem
+                label="Refunded"
+                value={`${formatCurrency(alreadyRefunded, payment.currency)} of ${formatCurrency(payment.amount, payment.currency)}`}
+              />
+              <DescriptionItem label="Refunded At" value={formatDateTime(payment.refundedAt)} />
+            </>
+          )}
         </Grid>
       </Paper>
+
+      <Dialog open={refundOpen} onClose={() => setRefundOpen(false)}>
+        <DialogTitle>Refund payment #{payment.paymentId}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Remaining refundable balance: {formatCurrency(remainingRefundable, payment.currency)}
+          </Typography>
+          <TextField
+            autoFocus
+            label="Refund amount"
+            type="number"
+            fullWidth
+            value={refundAmount}
+            onChange={(e) => setRefundAmount(e.target.value)}
+            error={refundAmount.trim() !== '' && !refundAmountValid}
+            helperText={
+              refundAmount.trim() !== '' && !refundAmountValid
+                ? `Enter an amount between 0 and ${remainingRefundable}`
+                : undefined
+            }
+            slotProps={{ htmlInput: { min: 0, max: remainingRefundable, step: '0.01' } }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRefundOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            disabled={!refundAmountValid}
+            loading={refundMutation.isPending}
+            onClick={() => refundMutation.mutate(parsedRefundAmount)}
+          >
+            Confirm Refund
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

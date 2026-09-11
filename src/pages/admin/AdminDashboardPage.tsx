@@ -22,6 +22,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
+import MoneyOffOutlinedIcon from '@mui/icons-material/MoneyOffOutlined';
 import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
@@ -292,6 +293,24 @@ export function AdminDashboardPage() {
             icon={<AccountBalanceWalletOutlinedIcon />}
             color="#16a34a"
             value={formatCurrency(paymentStats.data?.totalReceivedAllTime ?? 0)}
+            loading={paymentStats.isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatTile
+            title="Refund (range)"
+            icon={<MoneyOffOutlinedIcon />}
+            color={STATUS_COLORS.REFUNDED}
+            value={formatCurrency(paymentStats.data?.totalRefundedInRange ?? 0)}
+            loading={paymentStats.isLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatTile
+            title="Refund (all-time)"
+            icon={<MoneyOffOutlinedIcon />}
+            color={STATUS_COLORS.REFUNDED}
+            value={formatCurrency(paymentStats.data?.totalRefundedAllTime ?? 0)}
             loading={paymentStats.isLoading}
           />
         </Grid>

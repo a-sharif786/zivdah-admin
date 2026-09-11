@@ -18,6 +18,8 @@ export interface DailyAmountDto {
 export interface PaymentStatsResponseDto {
   totalReceivedAllTime: number;
   totalReceivedInRange: number;
+  totalRefundedAllTime: number;
+  totalRefundedInRange: number;
   series: DailyAmountDto[];
 }
 
@@ -35,4 +37,6 @@ export interface PaymentResponseDto {
   paidAt?: string;
   createdAt: string;
   updatedAt?: string;
+  refundAmount?: number | null;
+  refundedAt?: string | null;
 }
