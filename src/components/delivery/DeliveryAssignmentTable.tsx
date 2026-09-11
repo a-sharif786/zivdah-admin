@@ -30,11 +30,19 @@ export function DeliveryAssignmentTable({ orderId }: { orderId: number }) {
 
   const deliveriesKey = ['deliveries', orderId];
 
+  console.log("dleiveryId", orderId)
+
   const { data: deliveries, isLoading } = useQuery({
     queryKey: deliveriesKey,
     queryFn: () => deliveryApi.getByOrder(orderId),
     enabled: Number.isFinite(orderId),
   });
+
+
+    console.log("dleiveryId", deliveries)
+
+
+
 
   // Narrower than authApi.getAllUsers (ADMIN-only) — the only user-listing endpoint a
   // VENDOR is allowed to call. Kept unfiltered by `active` here so an already-assigned
@@ -45,12 +53,14 @@ export function DeliveryAssignmentTable({ orderId }: { orderId: number }) {
     queryFn: () => authApi.getDeliveryBoys(),
   });
 
+
+
   const deliveryBoyNames = useMemo(
     () => new Map((deliveryBoys ?? []).map((u) => [u.userId, u.name])),
     [deliveryBoys]
   );
   const activeDeliveryBoys = useMemo(() => (deliveryBoys ?? []).filter((u) => u.active), [deliveryBoys]);
-
+  console.log("dleiveryId", activeDeliveryBoys)
   const assignMutation = useMutation({
     mutationFn: ({ deliveryId, deliveryBoyId }: { deliveryId: number; deliveryBoyId: number }) =>
       deliveryApi.assign(deliveryId, deliveryBoyId),
