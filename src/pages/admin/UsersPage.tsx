@@ -10,7 +10,7 @@ import { notify } from '@/utils/notify';
 import type { AuthUserResponseDTO, Role } from '@/types/auth';
 import type { ApiError } from '@/types/common';
 
-const ROLES: Role[] = ['USER', 'ADMIN', 'VENDOR'];
+const ROLES: Role[] = ['USER', 'ADMIN', 'VENDOR','DELIVERY_BOY'];
 
 export function UsersPage() {
   const [page, setPage] = useState(0);

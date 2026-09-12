@@ -31,7 +31,11 @@ export function MyReviewsPage() {
   });
 
   const productNameById = new Map((products ?? []).map((p) => [p.id, p.name]));
-  const reviews: ReviewResponseDto[] = reviewQueries.flatMap((q) => q.data ?? []);
+  // Each per-product query is already newest-first, but merging across products needs its own
+  // sort — otherwise a brand-new review on one product can land under older reviews of another.
+  const reviews: ReviewResponseDto[] = reviewQueries
+    .flatMap((q) => q.data ?? [])
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const loading = productsLoading || reviewQueries.some((q) => q.isLoading);
   const paged = reviews.slice(page * size, page * size + size);
 

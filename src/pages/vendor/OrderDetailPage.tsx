@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { StatusTag } from '@/components/common/StatusTag';
 import { DataTable } from '@/components/common/DataTable';
 import { DeliveryAssignmentTable } from '@/components/delivery/DeliveryAssignmentTable';
+import { InvoiceSection } from '@/components/invoice/InvoiceSection';
 import { useAuth } from '@/hooks/useAuth';
 import { orderApi } from '@/api/orderApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
@@ -152,6 +153,11 @@ order.items.forEach((item) => {
           { title: 'Subtotal', dataIndex: 'subtotal', render: (v) => formatCurrency(v as number, order.currency) },
         ]}
       />
+
+      {/* View/download only — vendors don't get the manual "Generate Invoice" retry action,
+          same reasoning as REFUNDED being gated to ADMIN above. The backend still scopes
+          access to orders they own an item on either way (InvoiceController). */}
+      <InvoiceSection orderId={id} />
 
       <DeliveryAssignmentTable orderId={id} />
     </div>

@@ -8,6 +8,7 @@ import { StatusTag } from '@/components/common/StatusTag';
 import { DataTable } from '@/components/common/DataTable';
 import { ConfirmButton } from '@/components/common/ConfirmButton';
 import { DeliveryAssignmentTable } from '@/components/delivery/DeliveryAssignmentTable';
+import { InvoiceSection } from '@/components/invoice/InvoiceSection';
 import { orderApi } from '@/api/orderApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 import { notify } from '@/utils/notify';
@@ -145,6 +146,8 @@ export function OrderDetailPage() {
           { title: 'Subtotal', dataIndex: 'subtotal', render: (v) => formatCurrency(v as number, order.currency) },
         ]}
       />
+
+      <InvoiceSection orderId={id} canGenerate />
 
       <DeliveryAssignmentTable orderId={id} />
     </div>
