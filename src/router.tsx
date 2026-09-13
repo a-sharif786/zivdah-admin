@@ -3,6 +3,7 @@ import { ProtectedRoute } from '@/components/guards/ProtectedRoute';
 import { RoleRoute } from '@/components/guards/RoleRoute';
 import { RootRedirect } from '@/components/guards/RootRedirect';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { SupportLayout } from '@/components/layout/SupportLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { AccessDeniedPage } from '@/pages/AccessDeniedPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -19,6 +20,16 @@ import { PaymentDetailPage } from '@/pages/admin/PaymentDetailPage';
 import { InventoryPage } from '@/pages/admin/InventoryPage';
 import { NotificationsPage } from '@/pages/admin/NotificationsPage';
 import { ReviewsPage } from '@/pages/admin/ReviewsPage';
+
+import { LiveChatsPage } from '@/pages/admin/support/LiveChatsPage';
+import { WaitingQueuePage } from '@/pages/admin/support/WaitingQueuePage';
+import { MyChatsPage } from '@/pages/admin/support/MyChatsPage';
+import { AllConversationsPage } from '@/pages/admin/support/AllConversationsPage';
+import { ClosedChatsPage } from '@/pages/admin/support/ClosedChatsPage';
+import { ChatHistoryPage } from '@/pages/admin/support/ChatHistoryPage';
+import { SupportAgentsPage } from '@/pages/admin/support/SupportAgentsPage';
+import { SupportAnalyticsPage } from '@/pages/admin/support/SupportAnalyticsPage';
+import { ConversationDetailPage } from '@/pages/admin/support/ConversationDetailPage';
 
 import { VendorDashboardPage } from '@/pages/vendor/VendorDashboardPage';
 import { MyProductsPage } from '@/pages/vendor/MyProductsPage';
@@ -56,6 +67,28 @@ export const router = createBrowserRouter([
               { path: 'inventory', element: <InventoryPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'reviews', element: <ReviewsPage /> },
+              {
+                // Deliberately its own inner guard, separate from the outer /admin/* one
+                // above — if a distinct agent role is ever introduced, only this line changes.
+                element: <RoleRoute allowed={['ADMIN']} />,
+                children: [
+                  {
+                    path: 'support',
+                    element: <SupportLayout />,
+                    children: [
+                      { path: 'live', element: <LiveChatsPage /> },
+                      { path: 'queue', element: <WaitingQueuePage /> },
+                      { path: 'mine', element: <MyChatsPage /> },
+                      { path: 'all', element: <AllConversationsPage /> },
+                      { path: 'closed', element: <ClosedChatsPage /> },
+                      { path: 'history', element: <ChatHistoryPage /> },
+                      { path: 'agents', element: <SupportAgentsPage /> },
+                      { path: 'analytics', element: <SupportAnalyticsPage /> },
+                      { path: 'conversations/:id', element: <ConversationDetailPage /> },
+                    ],
+                  },
+                ],
+              },
             ],
           },
         ],

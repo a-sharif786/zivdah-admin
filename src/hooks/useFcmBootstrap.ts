@@ -35,6 +35,13 @@ export function useFcmBootstrap() {
       const body = payload.notification?.body;
       notify.info(body ? `${title}: ${body}` : title);
       queryClient.invalidateQueries({ queryKey: notificationsQueryKey });
+
+      // Support module piggybacks on this same push channel instead of a second parallel
+      // mechanism — any CHAT_* data type (new message, handoff, etc.) also refreshes the
+      // Support list pages so an agent elsewhere in the app sees it without a manual reload.
+      if (payload.data?.type?.startsWith('CHAT_')) {
+        queryClient.invalidateQueries({ queryKey: ['support-conversations'] });
+      }
     });
 
     return () => {

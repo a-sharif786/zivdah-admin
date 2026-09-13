@@ -30,6 +30,11 @@ const COLOR_MAP: Record<string, string> = {
   VENDOR: '#3b82f6',
   USER: '#94a3b8',
   DELIVERY_BOY: '#06b6d4',
+  // Support conversation statuses
+  OPEN: '#94a3b8',
+  WAITING: '#f59e0b',
+  ACTIVE: '#22c55e',
+  CLOSED: '#64748b',
 };
 
 export function StatusTag({ value }: { value: string | null | undefined }) {

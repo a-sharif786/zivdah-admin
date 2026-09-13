@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Drawer,
@@ -16,6 +16,7 @@ import {
   MenuItem,
   Tooltip,
   Divider,
+  Collapse,
 } from '@mui/material';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
@@ -24,6 +25,8 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
@@ -32,9 +35,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFcmBootstrap } from '@/hooks/useFcmBootstrap';
 import { getFcmToken } from '@/firebase';
 import { ADMIN_NAV, VENDOR_NAV, DELIVERY_NAV } from '@/components/layout/navConfig';
+import type { NavItem } from '@/components/layout/navConfig';
 import { authApi } from '@/api/authApi';
 import { useThemeStore } from '@/store/themeStore';
 import { BRAND } from '@/theme/theme';
+
+// Flattens a (one-level-deep) nested nav tree down to its leaf items — the ones that
+// actually have a `path` — so the AppBar's active-page-title lookup keeps working
+// unchanged for grouped entries like "Support".
+function flattenNav(items: NavItem[]): NavItem[] {
+  return items.flatMap((item) => (item.children && item.children.length > 0 ? flattenNav(item.children) : [item]));
+}
 
 const EXPANDED_WIDTH = 232;
 const COLLAPSED_WIDTH = 72;
@@ -60,6 +71,7 @@ const CONSOLE_LABELS: Record<string, string> = {
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const { user, isAdmin, isVendor, logout } = useAuth();
   useFcmBootstrap();
   const navigate = useNavigate();
@@ -68,11 +80,32 @@ export function AppLayout() {
   const toggleMode = useThemeStore((s) => s.toggleMode);
 
   const nav = isAdmin ? ADMIN_NAV : isVendor ? VENDOR_NAV : DELIVERY_NAV;
-  const activeItem = nav
+  const flatNav = useMemo(() => flattenNav(nav), [nav]);
+  const activeItem = flatNav
     .slice()
-    .sort((a, b) => b.path.length - a.path.length)
-    .find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
+    .sort((a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0))
+    .find((item) => item.path && (location.pathname === item.path || location.pathname.startsWith(item.path + '/')));
   const selectedKey = activeItem?.key ?? 'dashboard';
+
+  // Auto-expand whichever group contains the current route (e.g. landing on
+  // /admin/support/live directly, not via a sidebar click).
+  useEffect(() => {
+    const group = nav.find((item) =>
+      item.children?.some((c) => c.path && (location.pathname === c.path || location.pathname.startsWith(c.path + '/')))
+    );
+    if (group) {
+      setExpandedKeys((prev) => (prev.has(group.key) ? prev : new Set(prev).add(group.key)));
+    }
+  }, [location.pathname, nav]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -140,12 +173,89 @@ export function AppLayout() {
 
         <List sx={{ px: 1 }}>
           {nav.map((item) => {
+            if (item.children && item.children.length > 0) {
+              const children = item.children;
+              const expanded = expandedKeys.has(item.key);
+              const groupActive = children.some(
+                (c) => c.path && (location.pathname === c.path || location.pathname.startsWith(c.path + '/'))
+              );
+              return (
+                <Box key={item.key}>
+                  <Tooltip title={collapsed ? item.label : ''} placement="right">
+                    <ListItemButton
+                      onClick={() => {
+                        if (collapsed) {
+                          const firstPath = children[0]?.path;
+                          if (firstPath) navigate(firstPath);
+                        } else {
+                          toggleGroup(item.key);
+                        }
+                      }}
+                      sx={{
+                        borderRadius: '8px',
+                        mb: 0.5,
+                        minHeight: 42,
+                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        color: groupActive ? '#fff' : 'rgba(255,255,255,0.75)',
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      {!collapsed && (
+                        <>
+                          <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
+                          {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </>
+                      )}
+                    </ListItemButton>
+                  </Tooltip>
+                  {!collapsed && (
+                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                      <List component="div" disablePadding sx={{ pl: 1.5 }}>
+                        {children.map((child) => {
+                          const selected = child.key === selectedKey;
+                          return (
+                            <ListItemButton
+                              key={child.key}
+                              selected={selected}
+                              onClick={() => child.path && navigate(child.path)}
+                              sx={{
+                                borderRadius: '8px',
+                                mb: 0.5,
+                                minHeight: 38,
+                                pl: 3,
+                                color: 'rgba(255,255,255,0.7)',
+                                '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+                                '&.Mui-selected': {
+                                  backgroundColor: BRAND.siderActive,
+                                  color: '#fff',
+                                  boxShadow: `inset 3px 0 0 0 ${BRAND.primary}`,
+                                },
+                                '&.Mui-selected:hover': { backgroundColor: BRAND.siderActive },
+                              }}
+                            >
+                              <ListItemIcon sx={{ minWidth: 32, color: 'inherit', justifyContent: 'center' }}>
+                                {child.icon}
+                              </ListItemIcon>
+                              <ListItemText primary={child.label} slotProps={{ primary: { sx: { fontSize: 13.5 } } }} />
+                            </ListItemButton>
+                          );
+                        })}
+                      </List>
+                    </Collapse>
+                  )}
+                </Box>
+              );
+            }
+
             const selected = item.key === selectedKey;
             return (
               <Tooltip key={item.key} title={collapsed ? item.label : ''} placement="right">
                 <ListItemButton
                   selected={selected}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => item.path && navigate(item.path)}
                   sx={{
                     borderRadius: '8px',
                     mb: 0.5,
