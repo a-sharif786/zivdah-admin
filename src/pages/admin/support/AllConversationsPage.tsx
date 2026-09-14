@@ -39,7 +39,7 @@ export function AllConversationsPage() {
               setStatus(e.target.value as ConversationStatus | '');
               setPage(0);
             }}
-            sx={{ width: 200 }}
+            sx={{ width: { xs: '100%', sm: 200 } }}
           >
             <MenuItem value="">All</MenuItem>
             {STATUSES.map((s) => (

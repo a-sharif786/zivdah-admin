@@ -55,7 +55,7 @@ export function MyDeliveriesPage() {
               setStatusFilter(e.target.value as DeliveryStatus | '');
               setPage(0);
             }}
-            sx={{ width: 200 }}
+            sx={{ width: { xs: '100%', sm: 200 } }}
           >
             <MenuItem value="">All</MenuItem>
             {STATUSES.map((s) => (

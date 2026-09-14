@@ -81,7 +81,7 @@ export function OrderDetailPage() {
                   label="Change status to..."
                   value={nextStatus}
                   onChange={(e) => setNextStatus(e.target.value as OrderStatus)}
-                  sx={{ width: 200 }}
+                  sx={{ width: { xs: '100%', sm: 200 } }}
                 >
                   {options.map((s) => (
                     <MenuItem key={s} value={s}>

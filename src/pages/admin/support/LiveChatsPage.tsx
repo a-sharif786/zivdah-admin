@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, List, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Box, Paper, List, ListItemButton, ListItemText, Typography, IconButton, Drawer, useMediaQuery, useTheme } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -20,8 +22,13 @@ export function LiveChatsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const preselected = searchParams.get('conversationId');
   const [selectedId, setSelectedId] = useState<number | null>(preselected ? Number(preselected) : null);
+  const [contextOpen, setContextOpen] = useState(false);
   const { join, leave } = useSupportSocket();
   const queryClient = useQueryClient();
+  const theme = useTheme();
+  // Below this, list + thread + context (280 + flex + 320 = 600px of fixed chrome
+  // alone) simply don't fit — switch to a single-pane master/detail view instead.
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const closeMutation = useMutation({
     mutationFn: (id: number) => conversationApi.close(id),
@@ -81,71 +88,104 @@ export function LiveChatsPage() {
     enabled: selectedId != null,
   });
 
+  const listPane = (
+    <Paper sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0, overflowY: 'auto', height: '100%' }}>
+      <List disablePadding>
+        {!listLoading && activeConversations.length === 0 && (
+          <Box sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No active conversations. Accept one from the Waiting Queue to start.
+            </Typography>
+          </Box>
+        )}
+        {activeConversations.map((c) => (
+          <ListItemButton
+            key={c.id}
+            selected={c.id === selectedId}
+            onClick={() => setSelectedId(c.id)}
+            sx={{ borderBottom: '1px solid', borderColor: 'divider', alignItems: 'flex-start', py: 1.25 }}
+          >
+            <ListItemText
+              primary={c.customerName ?? `Customer #${c.customerId}`}
+              secondary={
+                <>
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ display: 'block' }}
+                  >
+                    {c.lastMessage ?? 'No messages yet'}
+                  </Typography>
+                  <Typography component="span" variant="caption" color="text.secondary">
+                    {formatDateTime(c.lastMessageAt ?? c.updatedAt)}
+                  </Typography>
+                </>
+              }
+            />
+          </ListItemButton>
+        ))}
+      </List>
+    </Paper>
+  );
+
+  const threadPane = (
+    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {isMobile && selectedId != null && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton onClick={() => setSelectedId(null)} aria-label="Back to conversation list" size="small">
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+          <Typography sx={{ fontWeight: 700, flex: 1 }} noWrap>
+            {conversation?.customerName ?? 'Conversation'}
+          </Typography>
+          {conversation?.orderContext && (
+            <IconButton onClick={() => setContextOpen(true)} aria-label="View order info" size="small">
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      )}
+      {selectedId != null ? (
+        <ConversationThread
+          conversationId={selectedId}
+          messages={messages ?? []}
+          loading={messagesLoading}
+          composerEnabled
+          onEndChat={() => closeMutation.mutate(selectedId)}
+          endingChat={closeMutation.isPending}
+        />
+      ) : (
+        <Paper sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography color="text.secondary">Select a conversation to start chatting</Typography>
+        </Paper>
+      )}
+    </Box>
+  );
+
   return (
     <div>
       <PageHeader title="Live Chats" subtitle="Your currently active conversations" />
       <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 140px)' }}>
-        <Paper sx={{ width: 280, flexShrink: 0, overflowY: 'auto' }}>
-          <List disablePadding>
-            {!listLoading && activeConversations.length === 0 && (
-              <Box sx={{ p: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No active conversations. Accept one from the Waiting Queue to start.
-                </Typography>
-              </Box>
-            )}
-            {activeConversations.map((c) => (
-              <ListItemButton
-                key={c.id}
-                selected={c.id === selectedId}
-                onClick={() => setSelectedId(c.id)}
-                sx={{ borderBottom: '1px solid', borderColor: 'divider', alignItems: 'flex-start', py: 1.25 }}
-              >
-                <ListItemText
-                  primary={c.customerName ?? `Customer #${c.customerId}`}
-                  secondary={
-                    <>
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.secondary"
-                        noWrap
-                        sx={{ display: 'block' }}
-                      >
-                        {c.lastMessage ?? 'No messages yet'}
-                      </Typography>
-                      <Typography component="span" variant="caption" color="text.secondary">
-                        {formatDateTime(c.lastMessageAt ?? c.updatedAt)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItemButton>
-            ))}
-          </List>
-        </Paper>
+        {/* Mobile: master/detail — list OR thread, never both. Desktop: all 3 panes together. */}
+        {isMobile ? (selectedId == null ? listPane : threadPane) : (
+          <>
+            {listPane}
+            {threadPane}
+            <Box sx={{ width: 320, flexShrink: 0 }}>
+              <OrderContextPanel orderContext={conversation?.orderContext} />
+            </Box>
+          </>
+        )}
+      </Box>
 
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          {selectedId != null ? (
-            <ConversationThread
-              conversationId={selectedId}
-              messages={messages ?? []}
-              loading={messagesLoading}
-              composerEnabled
-              onEndChat={() => closeMutation.mutate(selectedId)}
-              endingChat={closeMutation.isPending}
-            />
-          ) : (
-            <Paper sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography color="text.secondary">Select a conversation to start chatting</Typography>
-            </Paper>
-          )}
-        </Box>
-
-        <Box sx={{ width: 320, flexShrink: 0 }}>
+      {/* Mobile-only stand-in for the desktop context pane, opened via the info icon above. */}
+      <Drawer anchor="right" open={isMobile && contextOpen} onClose={() => setContextOpen(false)}>
+        <Box sx={{ width: 320, maxWidth: '85vw', height: '100%', p: 2 }}>
           <OrderContextPanel orderContext={conversation?.orderContext} />
         </Box>
-      </Box>
+      </Drawer>
     </div>
   );
 }

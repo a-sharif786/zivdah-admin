@@ -16,6 +16,8 @@ import {
   Rating,
   Typography,
   Box,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
@@ -71,8 +73,9 @@ function rangeForPreset(preset: RangePreset, customRange: [Dayjs, Dayjs] | null)
 }
 
 function EmptyChart({ description }: { description: string }) {
+  const isMobile = useMediaQuery(useTheme().breakpoints.down('md'));
   return (
-    <Box sx={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box sx={{ height: isMobile ? 220 : 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Typography color="text.secondary">{description}</Typography>
     </Box>
   );
@@ -109,6 +112,9 @@ export function AdminDashboardPage() {
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   const isDark = useIsDark();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const chartHeight = isMobile ? 220 : 280;
   const axisColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
   const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const tooltipStyle = {
@@ -324,7 +330,7 @@ export function AdminDashboardPage() {
               {revenueTrend.length === 0 ? (
                 <EmptyChart description="No successful payments in this range" />
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <AreaChart data={revenueTrend}>
                     <defs>
                       <linearGradient id="paymentReceived" x1="0" y1="0" x2="0" y2="1">
@@ -359,7 +365,7 @@ export function AdminDashboardPage() {
               {userCompositionData.length === 0 ? (
                 <EmptyChart description="No user data" />
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <PieChart>
                     <Pie
                       data={userCompositionData}
@@ -391,7 +397,7 @@ export function AdminDashboardPage() {
               {statusPieData.length === 0 ? (
                 <EmptyChart description="No orders in this range" />
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <PieChart>
                     <Pie
                       data={statusPieData}
@@ -420,7 +426,7 @@ export function AdminDashboardPage() {
               {categoryLoading && categoryData.every((d) => d.count === 0) ? (
                 <EmptyChart description="Loading…" />
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <BarChart data={categoryData} layout="vertical" margin={{ left: 8, right: 16 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={gridColor} />
                     <XAxis type="number" allowDecimals={false} stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
@@ -495,19 +501,24 @@ export function AdminDashboardPage() {
                         </Avatar>
                       </ListItemAvatar>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                          <Rating readOnly value={r.rating} size="small" />
-                          <Typography variant="caption" color="text.secondary">
-                            Product #{r.productId}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 1, rowGap: 0.25 }}>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0 }}>
+                            <Rating readOnly value={r.rating} size="small" sx={{ flexShrink: 0 }} />
+                            <Typography variant="caption" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
+                              Product #{r.productId}
+                            </Typography>
+                          </Stack>
+                          {/* Wraps onto its own line rather than being squeezed to nothing — see
+                              the plain (no flexWrap) version this replaced, where at narrow widths
+                              this date rendered right on top of the text above instead of shrinking. */}
+                          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', ml: 'auto' }}>
+                            {formatDateTime(r.createdAt)}
                           </Typography>
-                        </Stack>
+                        </Box>
                         <Typography variant="body2" noWrap title={r.comment}>
                           {r.comment || 'No comment left'}
                         </Typography>
                       </Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', pl: 1 }}>
-                        {formatDateTime(r.createdAt)}
-                      </Typography>
                     </ListItem>
                   ))}
                 </List>

@@ -88,7 +88,7 @@ export function ProductsPage() {
                 }
               }}
               slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-              sx={{ width: 240 }}
+              sx={{ width: { xs: '100%', sm: 240 } }}
             />
             <Button
               variant="contained"

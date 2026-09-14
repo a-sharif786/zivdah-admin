@@ -162,7 +162,7 @@ export function LoginPage() {
       </Box>
 
       <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
-        <Card sx={{ width: 380, p: 4, boxShadow: '0 8px 30px rgba(15, 23, 42, 0.08)' }}>
+        <Card sx={{ width: '100%', maxWidth: 380, p: 4, boxShadow: '0 8px 30px rgba(15, 23, 42, 0.08)' }}>
           <Typography variant="h6" sx={{ textAlign: 'center', fontWeight: 700, mb: 0.5 }}>
             Welcome back
           </Typography>

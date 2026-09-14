@@ -12,10 +12,13 @@ import {
   IconButton,
   Collapse,
   Box,
+  Stack,
+  Divider,
   LinearProgress,
   Typography,
   alpha,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -71,6 +74,9 @@ export function DataTable<T extends object>({
   emptyText?: ReactNode;
 }) {
   const theme = useTheme();
+  // Below this, a table (even with the horizontal-scroll fallback TableContainer
+  // already has) is genuinely hard to use — switch to one card per row instead.
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedKey, setSelectedKey] = useState<Key | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<ReadonlySet<Key>>(new Set());
 
@@ -86,7 +92,21 @@ export function DataTable<T extends object>({
     });
   };
 
+  const getCell = (col: DataTableColumn<T>, record: T, index: number): ReactNode => {
+    const value = col.dataIndex ? (record as Record<string, unknown>)[col.dataIndex] : undefined;
+    return col.render ? col.render(value, record, index) : (value as ReactNode);
+  };
+
   const columnCount = columns.length + (expandedRowRender ? 1 : 0);
+
+  // Card-view column split: the first column (commonly a name/id/thumbnail) becomes
+  // the card's prominent header; a trailing column with no dataIndex (i.e. purely
+  // render-based — the "Actions" column convention used across every page) sits
+  // beside it instead of being buried in the label/value list below.
+  const [firstCol, ...restCols] = columns;
+  const trailingCol = restCols[restCols.length - 1];
+  const hasTrailingActionsCol = restCols.length > 0 && !trailingCol.dataIndex;
+  const bodyCols = hasTrailingActionsCol ? restCols.slice(0, -1) : restCols;
 
   return (
     <Paper sx={{ overflow: 'hidden' }}>
@@ -107,95 +127,198 @@ export function DataTable<T extends object>({
         </Box>
       )}
       {loading && <LinearProgress />}
-      <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-        <Table size={size}>
-          <TableHead>
-            <TableRow>
-              {expandedRowRender && <TableCell width={40} />}
-              {columns.map((col, i) => (
-                <TableCell key={col.dataIndex ?? i} align={col.align} sx={{ width: col.width }}>
-                  {col.title}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {dataSource.length === 0 && !loading && (
-              <TableRow>
-                <TableCell colSpan={columnCount || 1} align="center" sx={{ py: 6, color: 'text.secondary' }}>
-                  {emptyText}
-                </TableCell>
-              </TableRow>
-            )}
-            {dataSource.map((record, index) => {
-              const key = getKey(record);
-              const isSelected = selectedKey === key;
-              const isExpanded = expandedKeys.has(key);
-              return (
-                <Fragment key={key}>
-                  <TableRow
-                    hover
-                    selected={isSelected}
-                    onClick={() => {
-                      if (onRowClick) {
-                        setSelectedKey(key);
-                        onRowClick(record);
-                      }
-                    }}
-                    sx={{
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      '&.Mui-selected': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                        borderLeft: `3px solid ${theme.palette.primary.main}`,
-                      },
-                      '&.Mui-selected:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.18),
-                      },
-                    }}
-                  >
+
+      {isMobile ? (
+        <Stack spacing={1.25} sx={{ p: 1.5 }}>
+          {dataSource.length === 0 && !loading && (
+            <Typography align="center" sx={{ py: 4, color: 'text.secondary' }}>
+              {emptyText}
+            </Typography>
+          )}
+          {dataSource.map((record, index) => {
+            const key = getKey(record);
+            const isSelected = selectedKey === key;
+            const isExpanded = expandedKeys.has(key);
+            return (
+              <Paper
+                key={key}
+                variant="outlined"
+                onClick={() => {
+                  if (onRowClick) {
+                    setSelectedKey(key);
+                    onRowClick(record);
+                  }
+                }}
+                sx={{
+                  p: 1.75,
+                  cursor: onRowClick ? 'pointer' : 'default',
+                  ...(isSelected && {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    borderLeft: `3px solid ${theme.palette.primary.main}`,
+                  }),
+                }}
+              >
+                {/* flexWrap, not a plain nowrap row: the trailing slot isn't always a compact
+                    action button — it can be arbitrary render output (e.g. a status hint
+                    sentence), and forcing it to share a line with a squeezed, wrapping header
+                    text made the two visually collide (single-line trailing text vertically
+                    centered against a now-two-line header). Letting it drop to its own line
+                    when it doesn't fit avoids that entirely. */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 1, rowGap: 0.5 }}>
+                  {/* flexBasis: 'auto' (not the 0% that a bare `flex: 1` shorthand implies) — the
+                      wrap decision above is based on each item's hypothetical (pre-shrink) size,
+                      and a 0% basis made this item invisible to that calculation, so the row
+                      never wrapped even when there truly wasn't room for both children. */}
+                  <Box sx={{ minWidth: 0, flexGrow: 1, flexShrink: 1, flexBasis: 'auto', fontWeight: 600 }}>
+                    {getCell(firstCol, record, index)}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0, ml: 'auto' }}>
+                    {hasTrailingActionsCol && getCell(trailingCol, record, index)}
                     {expandedRowRender && (
-                      <TableCell width={40}>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(key);
-                          }}
-                        >
-                          {isExpanded ? (
-                            <KeyboardArrowDownIcon fontSize="small" />
-                          ) : (
-                            <KeyboardArrowRightIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(key);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <KeyboardArrowDownIcon fontSize="small" />
+                        ) : (
+                          <KeyboardArrowRightIcon fontSize="small" />
+                        )}
+                      </IconButton>
                     )}
-                    {columns.map((col, i) => {
-                      const value = col.dataIndex ? (record as Record<string, unknown>)[col.dataIndex] : undefined;
-                      return (
-                        <TableCell key={col.dataIndex ?? i} align={col.align}>
-                          {col.render ? col.render(value, record, index) : (value as ReactNode)}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                  {expandedRowRender && (
-                    <TableRow>
-                      <TableCell colSpan={columnCount} sx={{ p: 0, border: isExpanded ? undefined : 'none' }}>
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Box sx={{ p: 2, backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
-                            {expandedRowRender(record)}
+                  </Box>
+                </Box>
+
+                {bodyCols.length > 0 && (
+                  <>
+                    <Divider sx={{ my: 1.25 }} />
+                    <Stack spacing={0.75}>
+                      {bodyCols.map((col, i) => (
+                        <Box
+                          key={col.dataIndex ?? i}
+                          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5 }}
+                        >
+                          <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                            {col.title}
+                          </Typography>
+                          <Box sx={{ fontSize: 14, textAlign: 'right', minWidth: 0 }}>
+                            {getCell(col, record, index)}
                           </Box>
-                        </Collapse>
-                      </TableCell>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </>
+                )}
+
+                {expandedRowRender && (
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Box
+                      sx={{
+                        mt: 1.25,
+                        pt: 1.25,
+                        borderTop: `1px dashed ${theme.palette.divider}`,
+                      }}
+                    >
+                      {expandedRowRender(record)}
+                    </Box>
+                  </Collapse>
+                )}
+              </Paper>
+            );
+          })}
+        </Stack>
+      ) : (
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table size={size}>
+            <TableHead>
+              <TableRow>
+                {expandedRowRender && <TableCell width={40} />}
+                {columns.map((col, i) => (
+                  <TableCell key={col.dataIndex ?? i} align={col.align} sx={{ width: col.width }}>
+                    {col.title}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {dataSource.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={columnCount || 1} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                    {emptyText}
+                  </TableCell>
+                </TableRow>
+              )}
+              {dataSource.map((record, index) => {
+                const key = getKey(record);
+                const isSelected = selectedKey === key;
+                const isExpanded = expandedKeys.has(key);
+                return (
+                  <Fragment key={key}>
+                    <TableRow
+                      hover
+                      selected={isSelected}
+                      onClick={() => {
+                        if (onRowClick) {
+                          setSelectedKey(key);
+                          onRowClick(record);
+                        }
+                      }}
+                      sx={{
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        '&.Mui-selected': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                          borderLeft: `3px solid ${theme.palette.primary.main}`,
+                        },
+                        '&.Mui-selected:hover': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.18),
+                        },
+                      }}
+                    >
+                      {expandedRowRender && (
+                        <TableCell width={40}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(key);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <KeyboardArrowDownIcon fontSize="small" />
+                            ) : (
+                              <KeyboardArrowRightIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </TableCell>
+                      )}
+                      {columns.map((col, i) => (
+                        <TableCell key={col.dataIndex ?? i} align={col.align}>
+                          {getCell(col, record, index)}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  )}
-                </Fragment>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    {expandedRowRender && (
+                      <TableRow>
+                        <TableCell colSpan={columnCount} sx={{ p: 0, border: isExpanded ? undefined : 'none' }}>
+                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                            <Box sx={{ p: 2, backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
+                              {expandedRowRender(record)}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
       {pagination && (
         <TablePagination
           component="div"

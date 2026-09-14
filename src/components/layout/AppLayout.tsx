@@ -17,7 +17,10 @@ import {
   Tooltip,
   Divider,
   Collapse,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
@@ -70,6 +73,7 @@ const CONSOLE_LABELS: Record<string, string> = {
 
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const { user, isAdmin, isVendor, logout } = useAuth();
@@ -78,6 +82,11 @@ export function AppLayout() {
   const location = useLocation();
   const mode = useThemeStore((s) => s.mode);
   const toggleMode = useThemeStore((s) => s.toggleMode);
+  const theme = useTheme();
+  // Below this, the sidebar has nowhere to go: it's a fixed 72–232px Drawer that would
+  // otherwise permanently eat a big chunk of a phone/small-tablet screen next to the
+  // content — same breakpoint LoginPage already uses to hide its brand panel.
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const nav = isAdmin ? ADMIN_NAV : isVendor ? VENDOR_NAV : DELIVERY_NAV;
   const flatNav = useMemo(() => flattenNav(nav), [nav]);
@@ -121,12 +130,23 @@ export function AppLayout() {
     navigate('/login', { replace: true });
   };
 
-  const drawerWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  // The rail-collapse (icons-only) treatment is a desktop-only concept — a mobile
+  // drawer is an overlay, not something squeezing content beside it, so it always
+  // shows in full whenever it's open at all.
+  const effectiveCollapsed = collapsed && !isMobile;
+  const drawerWidth = effectiveCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
+  const closeOnMobile = () => {
+    if (isMobile) setMobileOpen(false);
+  };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Drawer
-        variant="permanent"
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileOpen : true}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -161,7 +181,7 @@ export function AppLayout() {
           >
             Z
           </Box>
-          {!collapsed && (
+          {!effectiveCollapsed && (
             <Box sx={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>Zivdah</Typography>
               <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 11.5, lineHeight: 1.2 }}>
@@ -181,10 +201,10 @@ export function AppLayout() {
               );
               return (
                 <Box key={item.key}>
-                  <Tooltip title={collapsed ? item.label : ''} placement="right">
+                  <Tooltip title={effectiveCollapsed ? item.label : ''} placement="right">
                     <ListItemButton
                       onClick={() => {
-                        if (collapsed) {
+                        if (effectiveCollapsed) {
                           const firstPath = children[0]?.path;
                           if (firstPath) navigate(firstPath);
                         } else {
@@ -195,15 +215,15 @@ export function AppLayout() {
                         borderRadius: '8px',
                         mb: 0.5,
                         minHeight: 42,
-                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        justifyContent: effectiveCollapsed ? 'center' : 'flex-start',
                         color: groupActive ? '#fff' : 'rgba(255,255,255,0.75)',
                         '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
                       }}
                     >
-                      <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
+                      <ListItemIcon sx={{ minWidth: effectiveCollapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
                         {item.icon}
                       </ListItemIcon>
-                      {!collapsed && (
+                      {!effectiveCollapsed && (
                         <>
                           <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
                           {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
@@ -211,7 +231,7 @@ export function AppLayout() {
                       )}
                     </ListItemButton>
                   </Tooltip>
-                  {!collapsed && (
+                  {!effectiveCollapsed && (
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                       <List component="div" disablePadding sx={{ pl: 1.5 }}>
                         {children.map((child) => {
@@ -220,7 +240,10 @@ export function AppLayout() {
                             <ListItemButton
                               key={child.key}
                               selected={selected}
-                              onClick={() => child.path && navigate(child.path)}
+                              onClick={() => {
+                                if (child.path) navigate(child.path);
+                                closeOnMobile();
+                              }}
                               sx={{
                                 borderRadius: '8px',
                                 mb: 0.5,
@@ -252,15 +275,18 @@ export function AppLayout() {
 
             const selected = item.key === selectedKey;
             return (
-              <Tooltip key={item.key} title={collapsed ? item.label : ''} placement="right">
+              <Tooltip key={item.key} title={effectiveCollapsed ? item.label : ''} placement="right">
                 <ListItemButton
                   selected={selected}
-                  onClick={() => item.path && navigate(item.path)}
+                  onClick={() => {
+                    if (item.path) navigate(item.path);
+                    closeOnMobile();
+                  }}
                   sx={{
                     borderRadius: '8px',
                     mb: 0.5,
                     minHeight: 42,
-                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    justifyContent: effectiveCollapsed ? 'center' : 'flex-start',
                     color: 'rgba(255,255,255,0.75)',
                     '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
                     '&.Mui-selected': {
@@ -272,11 +298,11 @@ export function AppLayout() {
                   }}
                 >
                   <ListItemIcon
-                    sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}
+                    sx={{ minWidth: effectiveCollapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}
                   >
                     {item.icon}
                   </ListItemIcon>
-                  {!collapsed && (
+                  {!effectiveCollapsed && (
                     <ListItemText primary={item.label} slotProps={{ primary: { sx: { fontSize: 14 } } }} />
                   )}
                 </ListItemButton>
@@ -286,23 +312,27 @@ export function AppLayout() {
         </List>
 
         <Box sx={{ flexGrow: 1 }} />
-        <List sx={{ px: 1, pb: 1 }}>
-          <ListItemButton
-            onClick={() => setCollapsed((c) => !c)}
-            sx={{
-              borderRadius: '8px',
-              minHeight: 42,
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              color: 'rgba(255,255,255,0.6)',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
-              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-            </ListItemIcon>
-            {!collapsed && <ListItemText primary="Collapse" slotProps={{ primary: { sx: { fontSize: 13 } } }} />}
-          </ListItemButton>
-        </List>
+        {/* Rail-collapse is a desktop concept only — a mobile drawer is an overlay, so
+            shrinking it to icons-only would just waste the tap it took to open it. */}
+        {!isMobile && (
+          <List sx={{ px: 1, pb: 1 }}>
+            <ListItemButton
+              onClick={() => setCollapsed((c) => !c)}
+              sx={{
+                borderRadius: '8px',
+                minHeight: 42,
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                color: 'rgba(255,255,255,0.6)',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: collapsed ? 0 : 36, color: 'inherit', justifyContent: 'center' }}>
+                {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+              </ListItemIcon>
+              {!collapsed && <ListItemText primary="Collapse" slotProps={{ primary: { sx: { fontSize: 13 } } }} />}
+            </ListItemButton>
+          </List>
+        )}
       </Drawer>
 
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -328,14 +358,28 @@ export function AppLayout() {
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', gap: 2, minHeight: 68 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-              <Box sx={{ width: 4, height: 22, borderRadius: 4, background: BRAND.gradient }} />
-              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: -0.2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+              {isMobile && (
+                <IconButton
+                  onClick={() => setMobileOpen(true)}
+                  aria-label="Open navigation"
+                  edge="start"
+                  size="small"
+                  sx={{ mr: 0.5 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              <Box sx={{ width: 4, height: 22, borderRadius: 4, background: BRAND.gradient, flexShrink: 0 }} />
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, letterSpacing: -0.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
                 {activeItem?.label ?? 'Dashboard'}
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
               <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
                 <IconButton
                   onClick={toggleMode}
@@ -352,9 +396,12 @@ export function AppLayout() {
                 </IconButton>
               </Tooltip>
 
-              <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
+              {/* Hidden below md — the role is still visible in the user-menu dropdown,
+                  and there isn't room for title + toggle + divider + chip + user block
+                  next to the new hamburger on a phone-width Toolbar (which doesn't wrap). */}
+              {!isMobile && <Divider orientation="vertical" flexItem sx={{ my: 1 }} />}
 
-              {user &&
+              {!isMobile && user &&
                 (() => {
                   const RoleIcon = ROLE_ICONS[user.role] ?? AdminPanelSettingsOutlinedIcon;
                   const roleColor = ROLE_COLORS[user.role] ?? '#94a3b8';
@@ -401,7 +448,14 @@ export function AppLayout() {
                   <PersonOutlineIcon fontSize="small" />
                 </Avatar>
                 <Typography
-                  sx={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: 600 }}
+                  sx={{
+                    maxWidth: { xs: 90, sm: 140 },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
                 >
                   {user?.name}
                 </Typography>

@@ -77,8 +77,8 @@ export function ConversationDetailPage() {
         </Grid>
       </Paper>
 
-      <Box sx={{ display: 'flex', gap: 2, height: 520 }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, height: { xs: 'auto', md: 520 } }}>
+        <Box sx={{ flex: 1, minWidth: 0, height: { xs: 400, md: 'auto' } }}>
           <ConversationThread
             conversationId={conversation.id}
             messages={messages ?? []}
@@ -87,7 +87,7 @@ export function ConversationDetailPage() {
           />
         </Box>
         {conversation.orderContext && (
-          <Box sx={{ width: 320, flexShrink: 0 }}>
+          <Box sx={{ width: { xs: '100%', md: 320 }, flexShrink: 0 }}>
             <OrderContextPanel orderContext={conversation.orderContext} />
           </Box>
         )}
