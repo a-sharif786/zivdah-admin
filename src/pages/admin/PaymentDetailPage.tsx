@@ -65,6 +65,15 @@ export function PaymentDetailPage() {
     onError: (err: ApiError) => notify.error(err.message),
   });
 
+  const refreshGatewayMutation = useMutation({
+    mutationFn: () => paymentApi.getGatewayStatus(id),
+    onSuccess: (updated) => {
+      notify.success(`Gateway status: ${updated.status}`);
+      invalidate();
+    },
+    onError: (err: ApiError) => notify.error(err.message),
+  });
+
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState('');
 
@@ -103,6 +112,15 @@ export function PaymentDetailPage() {
             <Button variant="outlined" onClick={() => navigate('/admin/payments')}>
               Back
             </Button>
+            {!isTerminal && payment.method === 'UPI' && (
+              <Button
+                variant="outlined"
+                loading={refreshGatewayMutation.isPending}
+                onClick={() => refreshGatewayMutation.mutate()}
+              >
+                Refresh Gateway Status
+              </Button>
+            )}
             {!isTerminal && (
               <>
                 <ConfirmButton
@@ -142,6 +160,11 @@ export function PaymentDetailPage() {
           <DescriptionItem label="Gateway" value={payment.gatewayName ?? '-'} />
           <DescriptionItem label="Created" value={formatDateTime(payment.createdAt)} />
           <DescriptionItem label="Paid At" value={formatDateTime(payment.paidAt)} />
+          {payment.gatewayTxnId && (
+            <DescriptionItem label="Gateway Transaction ID" value={payment.gatewayTxnId} />
+          )}
+          {payment.payerVpa && <DescriptionItem label="Payer VPA" value={payment.payerVpa} />}
+          {payment.rrn && <DescriptionItem label="Bank Ref (RRN / UTR)" value={payment.rrn} />}
           {alreadyRefunded > 0 && (
             <>
               <DescriptionItem

@@ -33,7 +33,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFcmBootstrap } from '@/hooks/useFcmBootstrap';
 import { getFcmToken } from '@/firebase';
@@ -503,6 +503,7 @@ export function AppLayout() {
           <Outlet />
         </Box>
       </Box>
+      <ScrollRestoration />
     </Box>
   );
 }

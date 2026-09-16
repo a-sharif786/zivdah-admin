@@ -39,4 +39,11 @@ export interface PaymentResponseDto {
   updatedAt?: string;
   refundAmount?: number | null;
   refundedAt?: string | null;
+
+  // EcomWorldPay UPI QR (PayIn) fields — populated once a UPI payment's intent is registered.
+  upiIntent?: string | null;
+  payerVpa?: string | null;
+  rrn?: string | null;
+  npciTxnId?: string | null;
+  gatewayTxnId?: string | null;
 }

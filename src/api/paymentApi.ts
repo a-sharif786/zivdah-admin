@@ -26,4 +26,9 @@ export const paymentApi = {
   // from/to are ISO local datetimes, e.g. dayjs(...).format('YYYY-MM-DDTHH:mm:ss')
   getStats: (from: string, to: string) =>
     apiClient.get<PaymentStatsResponseDto>(`${BASE}/stats`, { params: { from, to } }).then((r) => r.data),
+
+  // Actively re-polls EcomWorldPay's status-check API — for a UPI payment stuck in
+  // PENDING/PROCESSING because its async callback was missed or delayed.
+  getGatewayStatus: (paymentId: number) =>
+    apiClient.get<PaymentResponseDto>(`${BASE}/${paymentId}/gateway-status`).then((r) => r.data),
 };
