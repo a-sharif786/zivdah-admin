@@ -5,6 +5,7 @@ import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
@@ -36,6 +37,7 @@ export const ADMIN_NAV: NavItem[] = [
   { key: 'coupons', path: '/admin/coupons', label: 'Coupons', icon: <LocalOfferOutlinedIcon /> },
   { key: 'orders', path: '/admin/orders', label: 'Orders', icon: <ShoppingCartOutlinedIcon /> },
   { key: 'payments', path: '/admin/payments', label: 'Payments', icon: <CreditCardOutlinedIcon /> },
+  { key: 'payouts', path: '/admin/payouts', label: 'Vendor Payouts', icon: <AccountBalanceWalletOutlinedIcon /> },
   { key: 'inventory', path: '/admin/inventory', label: 'Inventory', icon: <StorageOutlinedIcon /> },
   { key: 'notifications', path: '/admin/notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon /> },
   { key: 'reviews', path: '/admin/reviews', label: 'Reviews', icon: <StarOutlineOutlinedIcon /> },
@@ -61,6 +63,7 @@ export const VENDOR_NAV: NavItem[] = [
   { key: 'products', path: '/vendor/products', label: 'My Products', icon: <Inventory2OutlinedIcon /> },
   { key: 'orders', path: '/vendor/orders', label: 'My Orders', icon: <ShoppingCartOutlinedIcon /> },
   { key: 'inventory', path: '/vendor/inventory', label: 'My Inventory', icon: <StorageOutlinedIcon /> },
+  { key: 'payouts', path: '/vendor/payouts', label: 'My Payouts', icon: <AccountBalanceWalletOutlinedIcon /> },
   { key: 'notifications', path: '/vendor/notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon /> },
   { key: 'reviews', path: '/vendor/reviews', label: 'My Reviews', icon: <StarOutlineOutlinedIcon /> },
 ];

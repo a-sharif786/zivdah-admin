@@ -45,6 +45,17 @@ export interface UpdateRoleRequest {
 
 export interface UpdateUserProfileRequest {
   name: string;
+  // Vendor payout destination fields — optional and independent of `name`. Omitted (not sent)
+  // leaves whatever is already on file unchanged; see AuthServiceImpl#updateProfile.
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  upiVpa?: string;
+}
+
+export interface BankDetailsResponseDTO {
+  bankAccountNumber?: string | null;
+  bankIfscCode?: string | null;
+  upiVpa?: string | null;
 }
 
 export interface UserStatsResponseDTO {

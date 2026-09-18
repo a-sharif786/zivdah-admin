@@ -17,6 +17,7 @@ import { OrdersPage } from '@/pages/admin/OrdersPage';
 import { OrderDetailPage } from '@/pages/admin/OrderDetailPage';
 import { PaymentsPage } from '@/pages/admin/PaymentsPage';
 import { PaymentDetailPage } from '@/pages/admin/PaymentDetailPage';
+import { VendorPayoutsPage } from '@/pages/admin/VendorPayoutsPage';
 import { InventoryPage } from '@/pages/admin/InventoryPage';
 import { NotificationsPage } from '@/pages/admin/NotificationsPage';
 import { ReviewsPage } from '@/pages/admin/ReviewsPage';
@@ -36,6 +37,7 @@ import { MyProductsPage } from '@/pages/vendor/MyProductsPage';
 import { MyOrdersPage } from '@/pages/vendor/MyOrdersPage';
 import { OrderDetailPage as VendorOrderDetailPage } from '@/pages/vendor/OrderDetailPage';
 import { MyInventoryPage } from '@/pages/vendor/MyInventoryPage';
+import { MyPayoutsPage } from '@/pages/vendor/MyPayoutsPage';
 import { MyNotificationsPage } from '@/pages/vendor/MyNotificationsPage';
 import { MyReviewsPage } from '@/pages/vendor/MyReviewsPage';
 
@@ -64,6 +66,7 @@ export const router = createBrowserRouter([
               { path: 'orders/:orderId', element: <OrderDetailPage /> },
               { path: 'payments', element: <PaymentsPage /> },
               { path: 'payments/:paymentId', element: <PaymentDetailPage /> },
+              { path: 'payouts', element: <VendorPayoutsPage /> },
               { path: 'inventory', element: <InventoryPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'reviews', element: <ReviewsPage /> },
@@ -107,6 +110,7 @@ export const router = createBrowserRouter([
               { path: 'inventory', element: <MyInventoryPage /> },
               { path: 'notifications', element: <MyNotificationsPage /> },
               { path: 'reviews', element: <MyReviewsPage /> },
+              { path: 'payouts', element: <MyPayoutsPage /> },
             ],
           },
         ],

@@ -1,6 +1,7 @@
 import { apiClient } from '@/api/client';
 import type {
   AuthUserResponseDTO,
+  BankDetailsResponseDTO,
   LoginRequest,
   LoginResponseDTO,
   RegisterRequest,
@@ -36,6 +37,9 @@ export const authApi = {
 
   updateProfile: (userId: number, payload: UpdateUserProfileRequest) =>
     apiClient.put(`${BASE}/update-profile/${userId}`, payload).then((r) => r.data),
+
+  getBankDetails: (userId: number) =>
+    apiClient.get<BankDetailsResponseDTO>(`${BASE}/bank-details/${userId}`).then((r) => r.data),
 
   updateRole: (userId: number, payload: UpdateRoleRequest) =>
     apiClient.put(`${BASE}/update-role/${userId}`, payload).then((r) => r.data),

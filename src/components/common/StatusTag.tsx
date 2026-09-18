@@ -23,6 +23,9 @@ const COLOR_MAP: Record<string, string> = {
   PROCESSING: '#3b82f6',
   SUCCESS: '#22c55e',
   FAILED: '#ef4444',
+  // Vendor payout statuses (PROCESSING/SUCCESS/FAILED shared with payment statuses above)
+  REQUESTED: '#f59e0b',
+  REJECTED: '#ef4444',
   // Notification statuses
   SENT: '#22c55e',
   // Roles
