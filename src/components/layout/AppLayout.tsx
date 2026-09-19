@@ -158,11 +158,14 @@ export function AppLayout() {
             color: '#fff',
             border: 'none',
             overflowX: 'hidden',
+            // The paper itself doesn't scroll — the nav List below is the scrollable
+            // region, so the logo header and (desktop) collapse button stay pinned.
+            overflowY: 'hidden',
             transition: (t) => t.transitions.create('width'),
           },
         }}
       >
-        <Box sx={{ height: 72, display: 'flex', alignItems: 'center', gap: 1.25, mx: 2, overflow: 'hidden' }}>
+        <Box sx={{ height: 72, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.25, mx: 2, overflow: 'hidden' }}>
           <Box
             sx={{
               flex: '0 0 auto',
@@ -191,7 +194,7 @@ export function AppLayout() {
           )}
         </Box>
 
-        <List sx={{ px: 1 }}>
+        <List sx={{ px: 1, flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
           {nav.map((item) => {
             if (item.children && item.children.length > 0) {
               const children = item.children;

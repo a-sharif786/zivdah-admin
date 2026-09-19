@@ -1,11 +1,28 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react(),
+  visualizer({
+    filename: './dist/stats.html',
+    open: true,
+    gzipSize: true,
+    brotliSize: true,
+  }),
+
+  ],
+
+  resolve: {
+    tsconfigPaths: true,
+  },
+
   server: {
     port: 5174,
+  },
+
+  build: {
+    chunkSizeWarningLimit: 500,
   },
 })
