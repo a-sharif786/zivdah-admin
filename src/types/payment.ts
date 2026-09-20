@@ -25,7 +25,9 @@ export interface PaymentStatsResponseDto {
 
 export interface PaymentResponseDto {
   paymentId: number;
-  orderId: number;
+  // Null until the checkout flow that created this payment intent actually creates its order
+  // (see paymentApi's linkOrder / Checkout.jsx) — e.g. an attempt abandoned before completing.
+  orderId: number | null;
   userId: number;
   amount: number;
   currency?: string | null;
