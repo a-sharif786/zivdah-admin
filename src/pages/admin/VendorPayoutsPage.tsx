@@ -33,7 +33,14 @@ export function VendorPayoutsPage() {
   const approveMutation = useMutation({
     mutationFn: (payoutId: number) => payoutApi.approve(payoutId),
     onSuccess: (updated) => {
-      notify.success(`Payout submitted to gateway (${updated.gatewayStatus ?? updated.status})`);
+      // The gateway can reject a request synchronously at submission time (e.g. "Payee VPA is
+      // mandatory for UPI Payments") — that comes back as HTTP 200 with status FAILED, not a
+      // thrown error, so it needs its own branch rather than falling into the success toast.
+      if (updated.status === 'FAILED') {
+        notify.error(updated.gatewayDescription || `Payout failed at gateway (${updated.gatewayStatus ?? 'Invalid Request'})`);
+      } else {
+        notify.success(`Payout submitted to gateway (${updated.gatewayStatus ?? updated.status})`);
+      }
       invalidate();
     },
     onError: (err: ApiError) => notify.error(err.message),
@@ -42,7 +49,11 @@ export function VendorPayoutsPage() {
   const refreshMutation = useMutation({
     mutationFn: (payoutId: number) => payoutApi.refreshStatus(payoutId),
     onSuccess: (updated) => {
-      notify.success(`Status: ${updated.status}`);
+      if (updated.status === 'FAILED') {
+        notify.error(updated.gatewayDescription || `Status: ${updated.status}`);
+      } else {
+        notify.success(`Status: ${updated.status}`);
+      }
       invalidate();
     },
     onError: (err: ApiError) => notify.error(err.message),
@@ -91,10 +102,21 @@ export function VendorPayoutsPage() {
         columns={[
           { title: 'Vendor', dataIndex: 'vendorId', render: (v) => vendorName(v as number) },
           { title: 'Amount', dataIndex: 'amount', render: (v) => formatCurrency(v as number) },
-          { title: 'Destination', dataIndex: 'payeeVpa', render: (_v, r) => r.payeeVpa || r.accountNo || '-' },
+          {
+            title: 'Destination',
+            dataIndex: 'payeeVpa',
+            render: (_v, r) =>
+              r.payeeVpa || (r.accountNo ? `${r.accountNo}${r.ifscBankCode ? ` (${r.ifscBankCode})` : ''}` : '-'),
+          },
           { title: 'Mode', dataIndex: 'payoutMode' },
           { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
           { title: 'Requested', dataIndex: 'requestedAt', render: (v) => formatDateTime(v as string) },
+          { title: 'UTR', dataIndex: 'utrNumber', render: (v) => (v as string) ?? '-' },
+          {
+            title: 'Note',
+            dataIndex: 'gatewayDescription',
+            render: (v, r) => (r.rejectionReason ?? (v as string)) ?? '-',
+          },
           {
             title: 'Actions',
             render: (_v, r) => (

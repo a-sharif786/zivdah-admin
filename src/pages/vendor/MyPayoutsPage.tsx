@@ -141,9 +141,16 @@ export function MyPayoutsPage() {
         loading={payoutsLoading}
         dataSource={payouts ?? []}
         columns={[
+          { title: 'Request ID', dataIndex: 'payoutId' },
           { title: 'Requested', dataIndex: 'requestedAt', render: (v) => formatDateTime(v as string) },
           { title: 'Amount', dataIndex: 'amount', render: (v) => formatCurrency(v as number) },
           { title: 'Mode', dataIndex: 'payoutMode' },
+          {
+            title: 'Bank / UPI Details',
+            dataIndex: 'payeeVpa',
+            render: (_v, r) =>
+              r.payeeVpa || (r.accountNo ? `${r.accountNo}${r.ifscBankCode ? ` (${r.ifscBankCode})` : ''}` : '-'),
+          },
           { title: 'Status', dataIndex: 'status', render: (v) => <StatusTag value={v as string} /> },
           { title: 'UTR', dataIndex: 'utrNumber', render: (v) => (v as string) ?? '-' },
           {
