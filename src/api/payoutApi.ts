@@ -1,11 +1,16 @@
 import { apiClient } from '@/api/client';
-import type { PayoutStatus, VendorPayoutResponseDto } from '@/types/payout';
+import type { AdminPayoutRequestDto, PayoutStatus, VendorPayoutResponseDto } from '@/types/payout';
 
 const BASE = '/restful/v1/api/payments/payouts';
 
 export const payoutApi = {
   request: (amount: number) =>
     apiClient.post<VendorPayoutResponseDto>(BASE, { amount }).then((r) => r.data),
+
+  // Admin-initiated payout for a chosen vendor — lands as REQUESTED same as `request` above,
+  // still has to go through `approve` below to actually reach the gateway.
+  requestAsAdmin: (dto: AdminPayoutRequestDto) =>
+    apiClient.post<VendorPayoutResponseDto>(`${BASE}/admin`, dto).then((r) => r.data),
 
   mine: () => apiClient.get<VendorPayoutResponseDto[]>(`${BASE}/mine`).then((r) => r.data),
 
