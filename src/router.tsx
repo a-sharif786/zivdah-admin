@@ -18,6 +18,7 @@ import { OrderDetailPage } from '@/pages/admin/OrderDetailPage';
 import { PaymentsPage } from '@/pages/admin/PaymentsPage';
 import { PaymentDetailPage } from '@/pages/admin/PaymentDetailPage';
 import { VendorPayoutsPage } from '@/pages/admin/VendorPayoutsPage';
+import { VendorFinancialsPage } from '@/pages/admin/VendorFinancialsPage';
 import { InventoryPage } from '@/pages/admin/InventoryPage';
 import { NotificationsPage } from '@/pages/admin/NotificationsPage';
 import { ReviewsPage } from '@/pages/admin/ReviewsPage';
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
               { path: 'payments', element: <PaymentsPage /> },
               { path: 'payments/:paymentId', element: <PaymentDetailPage /> },
               { path: 'payouts', element: <VendorPayoutsPage /> },
+              { path: 'vendor-financials', element: <VendorFinancialsPage /> },
               { path: 'inventory', element: <InventoryPage /> },
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'reviews', element: <ReviewsPage /> },

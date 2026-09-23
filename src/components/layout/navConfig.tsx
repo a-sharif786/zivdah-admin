@@ -18,6 +18,7 @@ import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
 import type { ReactNode } from 'react';
 
 export interface NavItem {
@@ -38,6 +39,12 @@ export const ADMIN_NAV: NavItem[] = [
   { key: 'orders', path: '/admin/orders', label: 'Orders', icon: <ShoppingCartOutlinedIcon /> },
   { key: 'payments', path: '/admin/payments', label: 'Payments', icon: <CreditCardOutlinedIcon /> },
   { key: 'payouts', path: '/admin/payouts', label: 'Vendor Payouts', icon: <AccountBalanceWalletOutlinedIcon /> },
+  {
+    key: 'vendor-financials',
+    path: '/admin/vendor-financials',
+    label: 'Vendor Financials',
+    icon: <AccountBalanceOutlinedIcon />,
+  },
   { key: 'inventory', path: '/admin/inventory', label: 'Inventory', icon: <StorageOutlinedIcon /> },
   { key: 'notifications', path: '/admin/notifications', label: 'Notifications', icon: <NotificationsOutlinedIcon /> },
   { key: 'reviews', path: '/admin/reviews', label: 'Reviews', icon: <StarOutlineOutlinedIcon /> },

@@ -57,6 +57,7 @@ import { reviewApi } from '@/api/reviewApi';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 import { useIsDark } from '@/hooks/useIsDark';
 import { BRAND } from '@/theme/theme';
+import { REVENUE_ORDER_STATUSES, sumSubtotal } from '@/utils/orderRevenue';
 import type { OrderResponseDto, OrderStatus } from '@/types/order';
 import type { ProductCategory } from '@/types/product';
 import type { ReviewResponseDto } from '@/types/review';
@@ -101,18 +102,6 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: '#ef4444',
   REFUNDED: '#f97316',
 };
-
-// Orders in these statuses represent money the vendor has actually received (or will, once
-// shipped) — excludes not-yet-paid (CREATED/PAYMENT_PENDING) and reversed
-// (CANCELLED/REFUNDED) orders from every revenue figure on this page.
-const REVENUE_STATUSES = new Set<OrderStatus>([
-  'PAID',
-  'CONFIRMED',
-  'PACKING',
-  'READY_FOR_DELIVERY',
-  'OUT_FOR_DELIVERY',
-  'DELIVERED',
-]);
 
 export function VendorDashboardPage() {
   const { user } = useAuth();
@@ -170,16 +159,16 @@ export function VendorDashboardPage() {
   // already filters each order's `items` to this vendor's own line items server-side (see the
   // caption on MyOrdersPage.tsx) — not `order.totalAmount`, which reflects the whole,
   // possibly multi-vendor, order.
-  const orderRevenue = (order: OrderResponseDto) => order.items.reduce((sum, item) => sum + item.subtotal, 0);
+  const orderRevenue = (order: OrderResponseDto) => sumSubtotal(order.items);
 
   const ordersInRange = orderList.filter((o) => inRange(o.createdAt));
   const reviewsInRange = reviews.filter((r) => inRange(r.createdAt));
 
   const revenueAllTime = orderList
-    .filter((o) => REVENUE_STATUSES.has(o.status))
+    .filter((o) => REVENUE_ORDER_STATUSES.has(o.status))
     .reduce((sum, o) => sum + orderRevenue(o), 0);
   const revenueInRange = ordersInRange
-    .filter((o) => REVENUE_STATUSES.has(o.status))
+    .filter((o) => REVENUE_ORDER_STATUSES.has(o.status))
     .reduce((sum, o) => sum + orderRevenue(o), 0);
 
   const outOfStockCount = productList.filter((p) => !p.inStock).length;
@@ -187,7 +176,7 @@ export function VendorDashboardPage() {
 
   const revenueTrendMap = new Map<string, number>();
   ordersInRange
-    .filter((o) => REVENUE_STATUSES.has(o.status))
+    .filter((o) => REVENUE_ORDER_STATUSES.has(o.status))
     .forEach((o) => {
       const day = dayjs(o.createdAt).format('YYYY-MM-DD');
       revenueTrendMap.set(day, (revenueTrendMap.get(day) ?? 0) + orderRevenue(o));
