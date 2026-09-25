@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client';
+import { useAuthStore } from '@/store/authStore';
 import type {
   AuthUserResponseDTO,
   BankDetailsResponseDTO,
@@ -49,9 +50,18 @@ export const authApi = {
   deactivateUser: (userId: number) => apiClient.put<void>(`${BASE}/deactivate/${userId}`).then((r) => r.data),
 
   // fcmToken is optional — when passed, only this device's push registration is
-  // deactivated, other signed-in devices/browsers stay registered.
-  logout: (fcmToken?: string) =>
-    apiClient.post<void>(`${BASE}/logout`, fcmToken ? { fcmToken } : {}).then((r) => r.data),
+  // deactivated, other signed-in devices/browsers stay registered. The stored refresh
+  // token is sent so the backend revokes just this browser's session (it would otherwise
+  // revoke every refresh token the user holds).
+  logout: (fcmToken?: string) => {
+    const refreshToken = useAuthStore.getState().refreshToken;
+    return apiClient
+      .post<void>(`${BASE}/logout`, {
+        ...(fcmToken ? { fcmToken } : {}),
+        ...(refreshToken ? { refreshToken } : {}),
+      })
+      .then((r) => r.data);
+  },
 
   // Registers/refreshes one device's FCM token — a user may be signed in on several
   // devices/browsers at once, each becomes its own row server-side (see device_tokens).

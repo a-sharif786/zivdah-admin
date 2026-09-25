@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { conversationApi } from '@/api/conversationApi';
+import { refreshAccessToken } from '@/api/client';
 import type { ChatMessageDto, MessageStatus } from '@/types/conversation';
 
 /**
@@ -123,10 +124,22 @@ export function SupportSocketProvider({ children }: { children: ReactNode }) {
   );
 
   const connect = useCallback(
-    (conversationId: number) => {
-      const token = useAuthStore.getState().token;
+    (conversationId: number, justRefreshed = false) => {
+      const { token, refreshToken, isTokenExpired } = useAuthStore.getState();
       if (!token) {
         setStatus('FAILED');
+        return;
+      }
+      // The WS handshake can't go through apiClient's 401-refresh-retry, so renew an
+      // expired access token first; connect() re-runs with the fresh one from the store
+      // (once — justRefreshed stops a skewed client clock from looping).
+      if (!justRefreshed && isTokenExpired() && refreshToken) {
+        setStatus(attemptRef.current > 0 ? 'RECONNECTING' : 'CONNECTING');
+        refreshAccessToken()
+          .then(() => {
+            if (conversationIdRef.current === conversationId) connect(conversationId, true);
+          })
+          .catch(() => setStatus('FAILED'));
         return;
       }
 

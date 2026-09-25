@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/authApi';
 import { useAuthStore } from '@/store/authStore';
 import { getDeviceToken } from '@/utils/deviceToken';
+import { digitsOnly, useFieldValidation } from '@/utils/authValidation';
 import { BRAND } from '@/theme/theme';
 import type { ApiError } from '@/types/common';
 import type { LoginResponseDTO } from '@/types/auth';
@@ -17,6 +18,8 @@ const FEATURES = [
   { icon: <BoltOutlinedIcon fontSize="small" />, text: 'Real-time orders, payments & delivery status' },
   { icon: <VerifiedUserOutlinedIcon fontSize="small" />, text: 'Role-based access for admins and vendors' },
 ];
+
+const RULES = { email: 'email', password: 'currentPassword', mobile: 'mobile', otp: 'otp' } as const;
 
 export function LoginPage() {
   const [mode, setMode] = useState<'mobile' | 'email'>('mobile');
@@ -28,6 +31,7 @@ export function LoginPage() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { revalidate, validate, fieldProps, clearErrors } = useFieldValidation(RULES);
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
 
@@ -45,14 +49,17 @@ export function LoginPage() {
     setMode(v);
     setError(null);
     setOtpSent(false);
+    clearErrors();
   };
 
   const onEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!validate({ email, password })) return;
+
     setLoading(true);
     try {
-      const response = await authApi.login({ email, password });
+      const response = await authApi.login({ email: email.trim(), password });
       finishLogin(response);
     } catch (err) {
       setError((err as ApiError).message);
@@ -64,6 +71,8 @@ export function LoginPage() {
   const onSendOtp = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!validate({ mobile })) return;
+
     setLoading(true);
     try {
       await authApi.sendOtp(mobile);
@@ -79,6 +88,8 @@ export function LoginPage() {
   const onVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!validate({ otp })) return;
+
     setLoading(true);
     try {
       const response = await authApi.verifyOtp({ mobile: otpMobile, otp, deviceToken: await getDeviceToken() });
@@ -188,12 +199,19 @@ export function LoginPage() {
           )}
 
           {mode === 'email' ? (
-            <Stack component="form" spacing={2} onSubmit={onEmailLogin}>
+            <Stack component="form" spacing={2} onSubmit={onEmailLogin} noValidate>
               <TextField
                 label="Email"
+                type="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  revalidate('email', e.target.value);
+                }}
+                {...fieldProps('email')}
+                slotProps={{ htmlInput: { maxLength: 255 } }}
                 disabled={loading}
                 fullWidth
                 required
@@ -201,8 +219,13 @@ export function LoginPage() {
               <TextField
                 label="Password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  revalidate('password', e.target.value);
+                }}
+                {...fieldProps('password')}
                 disabled={loading}
                 fullWidth
                 required
@@ -212,12 +235,20 @@ export function LoginPage() {
               </Button>
             </Stack>
           ) : !otpSent ? (
-            <Stack component="form" spacing={2} onSubmit={onSendOtp}>
+            <Stack component="form" spacing={2} onSubmit={onSendOtp} noValidate>
               <TextField
                 label="Mobile Number"
+                type="tel"
+                autoComplete="tel-national"
                 placeholder="9876543210"
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => {
+                  const v = digitsOnly(e.target.value, 10);
+                  setMobile(v);
+                  revalidate('mobile', v);
+                }}
+                {...fieldProps('mobile')}
+                slotProps={{ htmlInput: { maxLength: 10, inputMode: 'numeric' } }}
                 disabled={loading}
                 fullWidth
                 required
@@ -227,14 +258,20 @@ export function LoginPage() {
               </Button>
             </Stack>
           ) : (
-            <Stack component="form" spacing={1.5} onSubmit={onVerifyOtp}>
+            <Stack component="form" spacing={1.5} onSubmit={onVerifyOtp} noValidate>
               <TextField
                 label={`OTP sent to ${otpMobile}`}
+                autoComplete="one-time-code"
                 placeholder="123456"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => {
+                  const v = digitsOnly(e.target.value, 6);
+                  setOtp(v);
+                  revalidate('otp', v);
+                }}
+                {...fieldProps('otp')}
                 disabled={loading}
-                slotProps={{ htmlInput: { maxLength: 6 } }}
+                slotProps={{ htmlInput: { maxLength: 6, inputMode: 'numeric' } }}
                 fullWidth
                 required
               />
@@ -244,7 +281,11 @@ export function LoginPage() {
               <Button type="submit" variant="contained" size="large" loading={loading} fullWidth sx={{ mt: 1 }}>
                 Verify &amp; Log In
               </Button>
-              <Button variant="text" disabled={loading} onClick={() => setOtpSent(false)} fullWidth>
+              <Button variant="text" disabled={loading} onClick={() => {
+                  setOtpSent(false);
+                  setOtp('');
+                  clearErrors();
+                }} fullWidth>
                 Use a different number
               </Button>
             </Stack>

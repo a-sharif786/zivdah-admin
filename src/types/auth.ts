@@ -27,7 +27,15 @@ export interface LoginResponseDTO {
   name: string;
   email: string;
   role: Role;
+  /** Same value as accessToken — kept for clients that predate refresh tokens. */
   token: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: 'Bearer';
+  /** Seconds until accessToken expires. */
+  expiresIn: number;
+  /** Seconds until refreshToken expires. */
+  refreshExpiresIn: number;
 }
 
 export interface AuthUserResponseDTO {
