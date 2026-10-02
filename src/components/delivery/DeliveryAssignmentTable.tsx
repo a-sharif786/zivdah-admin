@@ -30,7 +30,6 @@ export function DeliveryAssignmentTable({ orderId }: { orderId: number }) {
 
   const deliveriesKey = ['deliveries', orderId];
 
-  console.log("dleiveryId", orderId)
 
   const { data: deliveries, isLoading } = useQuery({
     queryKey: deliveriesKey,
@@ -39,7 +38,6 @@ export function DeliveryAssignmentTable({ orderId }: { orderId: number }) {
   });
 
 
-    console.log("dleiveryId", deliveries)
 
 
 
@@ -60,7 +58,6 @@ export function DeliveryAssignmentTable({ orderId }: { orderId: number }) {
     [deliveryBoys]
   );
   const activeDeliveryBoys = useMemo(() => (deliveryBoys ?? []).filter((u) => u.active), [deliveryBoys]);
-  console.log("dleiveryId", activeDeliveryBoys)
   const assignMutation = useMutation({
     mutationFn: ({ deliveryId, deliveryBoyId }: { deliveryId: number; deliveryBoyId: number }) =>
       deliveryApi.assign(deliveryId, deliveryBoyId),

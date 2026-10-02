@@ -71,15 +71,9 @@ export function OrderDetailPage() {
   // display, same as MyOrdersPage.tsx's row-level item count.
   const myItems = order.items.filter((i) => i.vendorId === vendorId);
 
-console.log("vendorId:", vendorId);
-console.log("vendorId:", myItems);
-order.items.forEach((item) => {
-  console.log("item.vendorId:", item.vendorId);
-  console.log("match:", item.vendorId === vendorId);
-});
-  // REFUNDED is a financial action gated to ADMIN server-side (OrderServiceImpl#updateStatus)
-  // — dropped here rather than offering a button guaranteed to 403.
-  const options = (NEXT_ORDER_STATUSES[order.status] ?? []).filter((s) => s !== 'REFUNDED');
+  // REFUNDED and PAID are financial outcomes gated to ADMIN server-side
+  // (OrderServiceImpl#updateStatus) — dropped here rather than offering a button guaranteed to 403.
+  const options = (NEXT_ORDER_STATUSES[order.status] ?? []).filter((s) => s !== 'REFUNDED' && s !== 'PAID');
 
   return (
     <div>
