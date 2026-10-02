@@ -45,8 +45,12 @@ import {
   Legend,
   BarChart,
   Bar,
+  Label,
+  LabelList,
 } from 'recharts';
 import { PageHeader } from '@/components/common/PageHeader';
+import { getChartStyle } from '@/components/charts/chartStyle';
+import { ChartEmptyState } from '@/components/charts/ChartEmptyState';
 import { StatusTag } from '@/components/common/StatusTag';
 import { StatTile } from '@/components/common/StatTile';
 import { DataTable } from '@/components/common/DataTable';
@@ -75,9 +79,7 @@ function rangeForPreset(preset: RangePreset, customRange: [Dayjs, Dayjs] | null)
 function EmptyChart({ description }: { description: string }) {
   const isMobile = useMediaQuery(useTheme().breakpoints.down('md'));
   return (
-    <Box sx={{ height: isMobile ? 220 : 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography color="text.secondary">{description}</Typography>
-    </Box>
+    <ChartEmptyState height={isMobile ? 220 : 280} description={description} />
   );
 }
 
@@ -115,15 +117,7 @@ export function AdminDashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const chartHeight = isMobile ? 220 : 280;
-  const axisColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const tooltipStyle = {
-    background: isDark ? '#131a2c' : '#fff',
-    border: 'none',
-    borderRadius: 8,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-  };
-  const tooltipLabelStyle = { color: isDark ? '#e2e8f0' : '#1f2937' };
+  const { axisColor, gridColor, tooltipStyle, tooltipLabelStyle } = getChartStyle(isDark);
 
   const [from, to] = useMemo(() => rangeForPreset(preset, customRange), [preset, customRange]);
   const fromStr = from.format(API_DATE_FORMAT);
@@ -334,24 +328,35 @@ export function AdminDashboardPage() {
                   <AreaChart data={revenueTrend}>
                     <defs>
                       <linearGradient id="paymentReceived" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={BRAND.primary} stopOpacity={0.35} />
-                        <stop offset="95%" stopColor={BRAND.primary} stopOpacity={0} />
+                        <stop offset="0%" stopColor={BRAND.primary} stopOpacity={0.45} />
+                        <stop offset="60%" stopColor={BRAND.primary} stopOpacity={0.12} />
+                        <stop offset="100%" stopColor={BRAND.primary} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                    <XAxis dataKey="date" stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={gridColor} />
+                    <XAxis dataKey="date" stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} axisLine={false} tickLine={false} dy={6} />
                     <YAxis
                       tickFormatter={(v) => formatCurrency(v)}
                       width={90}
                       stroke={axisColor}
                       tick={{ fill: axisColor, fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
                     />
                     <Tooltip
                       formatter={(v) => formatCurrency(Number(v))}
                       contentStyle={tooltipStyle}
                       labelStyle={tooltipLabelStyle}
+                      cursor={{ stroke: BRAND.primary, strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
-                    <Area type="monotone" dataKey="amount" stroke={BRAND.primary} fill="url(#paymentReceived)" strokeWidth={2} />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke={BRAND.primary}
+                      fill="url(#paymentReceived)"
+                      strokeWidth={2.75}
+                      activeDot={{ r: 6, strokeWidth: 3, stroke: isDark ? '#111827' : '#fff', fill: BRAND.primary }}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -371,16 +376,22 @@ export function AdminDashboardPage() {
                       data={userCompositionData}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={62}
-                      outerRadius={92}
+                      innerRadius={66}
+                      outerRadius={94}
                       paddingAngle={3}
+                      cornerRadius={8}
                     >
                       {userCompositionData.map((d) => (
                         <Cell key={d.name} fill={d.color} stroke="none" />
                       ))}
+                      <Label
+                        position="center"
+                        className="chart-center-total"
+                        value={userCompositionData.reduce((s, d) => s + d.value, 0).toLocaleString()}
+                      />
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                    <Legend verticalAlign="bottom" height={36} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={10} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -403,16 +414,22 @@ export function AdminDashboardPage() {
                       data={statusPieData}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={62}
-                      outerRadius={92}
+                      innerRadius={66}
+                      outerRadius={94}
                       paddingAngle={2}
+                      cornerRadius={8}
                     >
                       {statusPieData.map((d) => (
                         <Cell key={d.name} fill={d.color} stroke="none" />
                       ))}
+                      <Label
+                        position="center"
+                        className="chart-center-total"
+                        value={statusPieData.reduce((s, d) => s + d.value, 0).toLocaleString()}
+                      />
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                    <Legend verticalAlign="bottom" height={48} wrapperStyle={{ fontSize: 12 }} />
+                    <Legend verticalAlign="bottom" height={48} wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={9} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -427,22 +444,33 @@ export function AdminDashboardPage() {
                 <EmptyChart description="Loading…" />
               ) : (
                 <ResponsiveContainer width="100%" height={chartHeight}>
-                  <BarChart data={categoryData} layout="vertical" margin={{ left: 8, right: 16 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={gridColor} />
-                    <XAxis type="number" allowDecimals={false} stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 8, right: 36 }}>
+                    <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke={gridColor} />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      stroke={axisColor}
+                      tick={{ fill: axisColor, fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
                     <YAxis
                       type="category"
                       dataKey="category"
                       stroke={axisColor}
-                      tick={{ fill: axisColor, fontSize: 12 }}
+                      tick={{ fill: axisColor, fontSize: 12, fontWeight: 600 }}
                       width={110}
+                      axisLine={false}
+                      tickLine={false}
                     />
                     <Tooltip
                       formatter={(v) => `${v} product${Number(v) === 1 ? '' : 's'}`}
                       contentStyle={tooltipStyle}
                       labelStyle={tooltipLabelStyle}
+                      cursor={{ fill: gridColor }}
                     />
-                    <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={22}>
+                    <Bar dataKey="count" radius={[0, 10, 10, 0]} barSize={20} background={{ fill: gridColor, radius: 10 }}>
+                      <LabelList dataKey="count" position="right" className="chart-bar-label" />
                       {categoryData.map((d) => (
                         <Cell key={d.category} fill={d.color} />
                       ))}

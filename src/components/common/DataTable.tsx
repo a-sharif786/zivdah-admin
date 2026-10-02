@@ -117,12 +117,37 @@ export function DataTable<T extends object>({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 1,
+            flexWrap: 'wrap',
             px: 2.5,
-            py: 2,
+            py: 1.75,
             borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.text.primary, 0.025)}, transparent)`,
           }}
         >
-          {typeof title === 'string' ? <Typography sx={{ fontWeight: 700 }}>{title}</Typography> : title}
+          {typeof title === 'string' ? (
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: 15,
+                letterSpacing: '-0.01em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+                '&::before': {
+                  content: '""',
+                  width: 4,
+                  height: 16,
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  background: `linear-gradient(180deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
+                },
+              }}
+            >
+              {title}
+            </Typography>
+          ) : (
+            title
+          )}
           {extra}
         </Box>
       )}

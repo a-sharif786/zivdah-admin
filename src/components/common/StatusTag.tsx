@@ -49,8 +49,25 @@ export function StatusTag({ value }: { value: string | null | undefined }) {
       size="small"
       sx={{
         color,
-        backgroundColor: `${color}1f`,
-        border: `1px solid ${color}40`,
+        backgroundColor: `${color}1a`,
+        border: `1px solid ${color}38`,
+        fontSize: 11.5,
+        letterSpacing: '0.02em',
+        // Leading status dot.
+        '& .MuiChip-label': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          '&::before': {
+            content: '""',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            backgroundColor: color,
+            boxShadow: `0 0 0 2px ${color}33`,
+            flexShrink: 0,
+          },
+        },
       }}
     />
   );

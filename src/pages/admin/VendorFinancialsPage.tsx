@@ -38,6 +38,8 @@ import {
   Legend,
 } from 'recharts';
 import { PageHeader } from '@/components/common/PageHeader';
+import { getChartStyle } from '@/components/charts/chartStyle';
+import { ChartEmptyState } from '@/components/charts/ChartEmptyState';
 import { StatTile } from '@/components/common/StatTile';
 import { DataTable } from '@/components/common/DataTable';
 import { authApi } from '@/api/authApi';
@@ -99,9 +101,7 @@ function TypeChip({ type }: { type: 'PAYIN' | 'PAYOUT' }) {
 function EmptyChart({ description }: { description: string }) {
   const isMobile = useMediaQuery(useTheme().breakpoints.down('md'));
   return (
-    <Box sx={{ height: isMobile ? 220 : 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography color="text.secondary">{description}</Typography>
-    </Box>
+    <ChartEmptyState height={isMobile ? 220 : 260} description={description} />
   );
 }
 
@@ -111,15 +111,8 @@ export function VendorFinancialsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const chartHeight = isMobile ? 220 : 260;
-  const axisColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const tooltipStyle = {
-    background: isDark ? '#131a2c' : '#fff',
-    border: 'none',
-    borderRadius: 8,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-  };
-  const tooltipLabelStyle = { color: isDark ? '#e2e8f0' : '#1f2937' };
+  const { axisColor, gridColor, tooltipStyle, tooltipLabelStyle } = getChartStyle(isDark);
+
 
   const [preset, setPreset] = useState<RangePreset>('allTime');
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
@@ -415,7 +408,7 @@ export function VendorFinancialsPage() {
               ) : (
                 <ResponsiveContainer width="100%" height={chartHeight}>
                   <BarChart data={dateChartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={gridColor} />
                     <XAxis dataKey="label" stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
                     <YAxis
                       tickFormatter={(v) => formatCurrency(v)}
@@ -428,9 +421,9 @@ export function VendorFinancialsPage() {
                       contentStyle={tooltipStyle}
                       labelStyle={tooltipLabelStyle}
                     />
-                    <Legend />
-                    <Bar dataKey="payin" name="Payin" fill={BRAND.primary} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="payout" name="Payout" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    <Legend iconType="circle" iconSize={9} />
+                    <Bar dataKey="payin" name="Payin" fill={BRAND.primary} radius={[8, 8, 0, 0]} maxBarSize={34} />
+                    <Bar dataKey="payout" name="Payout" fill="#8b5cf6" radius={[8, 8, 0, 0]} maxBarSize={34} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -447,13 +440,13 @@ export function VendorFinancialsPage() {
                 ) : (
                   <ResponsiveContainer width="100%" height={chartHeight / 2}>
                     <PieChart>
-                      <Pie data={payinBucketMix} dataKey="value" nameKey="name" innerRadius={45} outerRadius={68} paddingAngle={3}>
+                      <Pie data={payinBucketMix} dataKey="value" nameKey="name" innerRadius={46} outerRadius={70} paddingAngle={3} cornerRadius={6}>
                         {payinBucketMix.map((d) => (
                           <Cell key={d.name} fill={d.color} stroke="none" />
                         ))}
                       </Pie>
                       <Tooltip formatter={(v) => formatCurrency(Number(v))} contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                      <Legend verticalAlign="bottom" height={28} />
+                      <Legend verticalAlign="bottom" height={28} iconType="circle" iconSize={9} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -467,13 +460,13 @@ export function VendorFinancialsPage() {
                 ) : (
                   <ResponsiveContainer width="100%" height={chartHeight / 2}>
                     <PieChart>
-                      <Pie data={payoutBucketMix} dataKey="value" nameKey="name" innerRadius={45} outerRadius={68} paddingAngle={3}>
+                      <Pie data={payoutBucketMix} dataKey="value" nameKey="name" innerRadius={46} outerRadius={70} paddingAngle={3} cornerRadius={6}>
                         {payoutBucketMix.map((d) => (
                           <Cell key={d.name} fill={d.color} stroke="none" />
                         ))}
                       </Pie>
                       <Tooltip formatter={(v) => formatCurrency(Number(v))} contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                      <Legend verticalAlign="bottom" height={28} />
+                      <Legend verticalAlign="bottom" height={28} iconType="circle" iconSize={9} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, Grid, Stack, ToggleButton, ToggleButtonGroup, Typography, Box } from '@mui/material';
+import { Card, CardContent, CardHeader, Grid, Stack, ToggleButton, ToggleButtonGroup, Box } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined';
 import ChatOutlinedIcon from '@mui/icons-material/ChatOutlined';
@@ -12,6 +12,8 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs, { type Dayjs } from 'dayjs';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { PageHeader } from '@/components/common/PageHeader';
+import { getChartStyle } from '@/components/charts/chartStyle';
+import { ChartEmptyState } from '@/components/charts/ChartEmptyState';
 import { StatTile } from '@/components/common/StatTile';
 import { DataTable } from '@/components/common/DataTable';
 import { conversationApi } from '@/api/conversationApi';
@@ -38,9 +40,7 @@ function formatDuration(seconds: number | null | undefined): string {
 
 function EmptyChart({ description }: { description: string }) {
   return (
-    <Box sx={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography color="text.secondary">{description}</Typography>
-    </Box>
+    <ChartEmptyState height={260} description={description} />
   );
 }
 
@@ -48,15 +48,8 @@ export function SupportAnalyticsPage() {
   const [preset, setPreset] = useState<RangePreset>('week');
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   const isDark = useIsDark();
-  const axisColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
-  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const tooltipStyle = {
-    background: isDark ? '#131a2c' : '#fff',
-    border: 'none',
-    borderRadius: 8,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-  };
-  const tooltipLabelStyle = { color: isDark ? '#e2e8f0' : '#1f2937' };
+  const { axisColor, gridColor, tooltipStyle, tooltipLabelStyle } = getChartStyle(isDark);
+
 
   const [from, to] = useMemo(() => rangeForPreset(preset, customRange), [preset, customRange]);
   const fromStr = from.format(API_DATE_FORMAT);
@@ -178,13 +171,13 @@ export function SupportAnalyticsPage() {
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={volumeData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={gridColor} />
                     <XAxis dataKey="date" stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
                     <YAxis allowDecimals={false} stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
                     <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                    <Legend />
-                    <Bar dataKey="Bot" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Human" fill={BRAND.primary} radius={[4, 4, 0, 0]} />
+                    <Legend iconType="circle" iconSize={9} />
+                    <Bar dataKey="Bot" fill="#8b5cf6" radius={[8, 8, 0, 0]} maxBarSize={34} />
+                    <Bar dataKey="Human" fill={BRAND.primary} radius={[8, 8, 0, 0]} maxBarSize={34} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -205,15 +198,15 @@ export function SupportAnalyticsPage() {
                   <AreaChart data={timeTrendData}>
                     <defs>
                       <linearGradient id="responseTime" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.42} />
                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="resolutionTime" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={BRAND.primary} stopOpacity={0.35} />
+                        <stop offset="5%" stopColor={BRAND.primary} stopOpacity={0.42} />
                         <stop offset="95%" stopColor={BRAND.primary} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                    <CartesianGrid strokeDasharray="4 4" vertical={false} stroke={gridColor} />
                     <XAxis dataKey="date" stroke={axisColor} tick={{ fill: axisColor, fontSize: 12 }} />
                     <YAxis
                       tickFormatter={(v) => formatDuration(v as number)}
@@ -221,7 +214,7 @@ export function SupportAnalyticsPage() {
                       tick={{ fill: axisColor, fontSize: 12 }}
                     />
                     <Tooltip formatter={(v) => formatDuration(Number(v))} contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
-                    <Legend />
+                    <Legend iconType="circle" iconSize={9} />
                     <Area type="monotone" dataKey="Response time (s)" stroke="#3b82f6" fill="url(#responseTime)" strokeWidth={2} connectNulls />
                     <Area
                       type="monotone"
