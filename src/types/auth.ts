@@ -27,12 +27,11 @@ export interface LoginResponseDTO {
   name: string;
   email: string;
   role: Role;
-  /** Same value as accessToken — kept for clients that predate refresh tokens. */
+  /** The short-lived access token (JWT). The backend has no separate `accessToken` field. */
   token: string;
-  accessToken: string;
   refreshToken: string;
   tokenType: 'Bearer';
-  /** Seconds until accessToken expires. */
+  /** Seconds until `token` expires. */
   expiresIn: number;
   /** Seconds until refreshToken expires. */
   refreshExpiresIn: number;

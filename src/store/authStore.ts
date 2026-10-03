@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       login: (response) => {
         set({
-          token: response.accessToken ?? response.token,
+          token: response.token,
           refreshToken: response.refreshToken ?? null,
           user: {
             id: response.id,

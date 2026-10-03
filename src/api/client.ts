@@ -42,7 +42,15 @@ export function refreshAccessToken(): Promise<string> {
         : Promise.reject(new Error('No refresh token'))
     )
       .then((res) => {
-        const { accessToken, refreshToken: nextRefreshToken } = res.data.data;
+        const data = res.data.data;
+        // The backend's LoginResponseDTO carries the access token as `token` (there is no
+        // `accessToken` field); reading `accessToken` stored undefined and logged admins out
+        // at the first refresh (~15 min after login).
+        const accessToken = data?.token;
+        const nextRefreshToken = data?.refreshToken;
+        if (!accessToken || !nextRefreshToken) {
+          throw new Error('Refresh response missing tokens');
+        }
         useAuthStore.getState().setTokens(accessToken, nextRefreshToken);
         return accessToken;
       })
